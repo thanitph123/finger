@@ -1,0 +1,194 @@
+<!--Gemini prompt
+เขียน html file ให้มีความสามารถดังนี้
+1. ตรวจสอบการเปิดกล้องของเครื่องมือ ถ้ายังไม่เปิดกล้องให้เปิดกล้องก่อน
+2. แสดงข้อความให้ผู้ใช้งานชูนิ้วที่หน้ากล้อง
+3. ให้ดูนิ้วที่โชว์ผ่านกล้อง แล้วตอบเป็นของความว่า โชว์เลขอะไรเช่น 1  2  3  4  5 -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจจับและนับนิ้วมือด้วย AI</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+        h1 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        #message {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background-color: #ffeaa7;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .camera-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            background-color: #dfe6e9;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        /* กลับซ้ายขวาของกล้องให้เหมือนกระจกเงา จะได้ใช้งานไม่ฝืนความรู้สึก */
+        #webcam, #output_canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+        #result-box {
+            margin-top: 25px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0984e3;
+            background: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        #finger-count {
+            font-size: 3rem;
+            color: #d63031;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ระบบตรวจจับจำนวนนิ้วมือ</h1>
+    <div id="message">กำลังตรวจสอบและขอสิทธิ์เปิดกล้อง...</div>
+
+    <div class="camera-container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="output_canvas" width="640" height="480"></canvas>
+    </div>
+
+    <div id="result-box">
+        โชว์เลข: <span id="finger-count">-</span>
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const messageElement = document.getElementById('message');
+        const fingerCountElement = document.getElementById('finger-count');
+
+        // ฟังก์ชันประมวลผลเมื่อ AI ตรวจเจอภาพมือ
+        function onResults(results) {
+            // ล้างหน้าจอ Canvas ทุกเฟรม
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            // วาดภาพจากกล้องลงบน Canvas (ถ้าต้องการให้ลื่นไหล)
+            // canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                // เปลี่ยนข้อความเมื่อเจอข้อมูลมือ
+                messageElement.innerText = "🙌 ตรวจพบมือของคุณแล้ว!";
+                messageElement.style.backgroundColor = "#55efc4";
+
+                for (let index = 0; index < results.multiHandLandmarks.length; index++) {
+                    const landmarks = results.multiHandLandmarks[index];
+                    const handedness = results.multiHandedness[index].label; // ตรวจว่าเป็นมือซ้ายหรือขวา
+
+                    // วาดเส้นโครงกระดูกของมือให้ผู้ใช้เห็นบนหน้าจอ
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00ccff', lineWidth: 4});
+                    drawLandmarks(canvasCtx, landmarks, {color: '#ff7675', lineWidth: 1, radius: 4});
+
+                    // ตรรกะการนับนิ้ว (เช็คว่าปลายนิ้วอยู่สูงกว่าข้อต่อถัดลงมาหรือไม่)
+                    let count = 0;
+
+                    // 1. นิ้วโป้ง (เช็คแกน X แทนแกน Y เนื่องจากธรรมชาติของนิ้วโป้งจะกางออกด้านข้าง)
+                    // เนื่องจากภาพถูก Mirror ไว้ ตรรกะของมือซ้าย/ขวาจะสลับกันเล็กน้อย
+                    if (handedness === 'Left') {
+                        if (landmarks[4].x > landmarks[3].x) count++;
+                    } else {
+                        if (landmarks[4].x < landmarks[3].x) count++;
+                    }
+
+                    // 2. นิ้วชี้ (ข้อที่ 8 สูงกว่า ข้อที่ 6) *ในจอคอม แกน Y ยิ่งน้อยคือยิ่งอยู่สูง
+                    if (landmarks[8].y < landmarks[6].y) count++;
+                    
+                    // 3. นิ้วกลาง (ข้อที่ 12 สูงกว่า ข้อที่ 10)
+                    if (landmarks[12].y < landmarks[10].y) count++;
+                    
+                    // 4. นิ้วนาง (ข้อที่ 16 สูงกว่า ข้อที่ 14)
+                    if (landmarks[16].y < landmarks[14].y) count++;
+                    
+                    // 5. นิ้วก้อย (ข้อที่ 20 สูงกว่า ข้อที่ 18)
+                    if (landmarks[20].y < landmarks[18].y) count++;
+
+                    // แสดงผลลัพธ์ตัวเลข 1 - 5
+                    if (count > 0 && count <= 5) {
+                        fingerCountElement.innerText = count;
+                    } else if (count > 5) {
+                        fingerCountElement.innerText = "5+";
+                    } else {
+                        fingerCountElement.innerText = "0";
+                    }
+                }
+            } else {
+                // หากไม่พบมือ ให้แสดงข้อความสั่งให้ชูนิ้วตามโจทย์
+                messageElement.innerText = "📸 กรุณาชูนิ้วที่หน้ากล้อง";
+                messageElement.style.backgroundColor = "#ffeaa7";
+                fingerCountElement.innerText = "-";
+            }
+            canvasCtx.restore();
+        }
+
+        // ตั้งค่าโมเดล MediaPipe Hands
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,            // ตรวจจับทีละ 1 มือเพื่อความแม่นยำ
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
+        hands.onResults(onResults);
+
+        // เปิดใช้งานกล้องเว็บแคม
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+
+        // สั่งให้กล้องทำงาน พร้อมตรวจสอบสิทธิ์การเข้าถึงกล้อง
+        camera.start()
+            .then(() => {
+                messageElement.innerText = "📸 กล้องเปิดใช้งานแล้ว กรุณาชูนิ้วที่หน้ากล้อง";
+            })
+            .catch((err) => {
+                messageElement.innerText = "❌ ไม่สามารถเปิดกล้องได้ กรุณากดอนุญาตให้เข้าถึงกล้อง (Allow Camera)";
+                messageElement.style.backgroundColor = "#ff7675";
+                console.error("Camera access error:", err);
+            });
+    </script>
+</body>
+</html>
