@@ -1,0 +1,531 @@
+<!--ยกเลิกคำถามเดิม โดยเปลี่ยนเป็น 6 คำถามที่แนบ  โดยเมื่อตอบครบ 6 คำถาม แล้ว ให้แสดงคะแนนรวมจากการตอบทั้ง 6 คำถาม  โดยถ้าเลือก 1  ได้ 1 คะแนน  เลือก 2 ได้ 2 คะแนน เลือก 3 ได้ 3 คะแนน เลือก 4 ได้ 4 คะแนน  ในส่วนอื่นเหมือนเดิมครับ
+
+ข้อ 1: ในช่วง 1 สัปดาห์ที่ผ่านมา
+คุณเรียกใช้งาน AI (เช่น Gemini, ChatGPT, Claude ฯลฯ) บ่อยแค่ไหน?
+1. แทบไม่ได้ใช้เลย หรือไม่ได้ใช้เลย
+2. 1-3 วันต่อสัปดาห์ (ใช้เฉพาะกิจ)
+3. ใช้เกือบทุกวัน (วันละ 1-2 ครั้ง)
+4. ใช้หลายครั้งในแต่ละวัน (เปิดทิ้งไว้เป็นผู้ช่วยประจำตัว)
+
+ข้อ 2: เมื่อคุณต้องเริ่มต้นโปรเจกต์ใหม่ คิดงาน
+หรือแก้ปัญหาที่ซับซ้อน สิ่งแรกที่คุณมักจะทำคืออะไร?
+1. นั่งคิดและร่างโครงสร้างด้วยตัวเองก่อน
+2. ค้นหาข้อมูลทั่วไป หรือปรึกษาคนรอบข้าง
+3. พิมพ์ถาม AI ให้ช่วยโยนไอเดียหรือร่างโครงสร้างให้ทันที
+4. ให้ AI ทำให้ทั้งหมดแล้วค่อยนำมาเลือก
+ 
+ข้อ 3: เมื่อ AI
+ให้คำตอบที่ดูเหมือนจะถูกต้องและเป็นระเบียบเรียบร้อย
+คุณมักจะจัดการกับข้อมูลนั้นอย่างไร?
+1. ตรวจสอบความถูกต้องกับแหล่งข้อมูลอื่นที่เชื่อถือได้เสมอ
+2. อ่านทบทวนและปรับแก้สำนวนด้วยตัวเองก่อนนำไปใช้
+3.  ก๊อปปี้ไปใช้งานทันที
+เพราะเชื่อมั่นว่า AI ประมวลผลมาดีแล้ว
+ 
+ข้อ 4: ลองสำรวจตัวเองอย่างซื่อสัตย์
+คุณรู้สึกว่าความมั่นใจในการ "ตัดสินใจ" หรือ "คิดวิเคราะห์"
+ด้วยตัวเอง ลดลงบ้างหรือไม่ตั้งแต่มี AI เข้ามาช่วย?
+1. ไม่เลย ฉันยังมั่นใจในการคิดและตัดสินใจด้วยตัวเอง
+100%
+2. มีบ้างบางครั้งที่อยากให้ AI
+ช่วยคอนเฟิร์มความคิด
+3. ลดลงพอสมควร เริ่มรู้สึกลังเลถ้าไม่ได้ถาม AI
+ก่อน
+4. ลดลงมาก
+แทบไม่กล้าฟันธงอะไรเลยถ้าไม่ได้เอาไปถาม AI
+ 
+ข้อ 5: สมมติว่าวันนี้ระบบ AI
+ล่มทั่วโลกใช้งานไม่ได้เลย และคุณมีงานหรือภารกิจสำคัญที่ต้องทำ
+คุณจะรู้สึกอย่างไร?
+1. ไม่กระทบเลย สามารถทำงานต่อไปได้ตามปกติ
+2. หงุดหงิดนิดหน่อย
+อาจจะทำงานช้าลงบ้างแต่จัดการได้
+3. กระวนกระวายใจ
+เริ่มเครียดว่าจะทำงานเสร็จไม่ทัน
+4. มืดแปดด้าน รู้สึกไปต่อไม่ถูก ทำงานไม่ได้เลย
+ 
+ข้อ 6: การใช้ AI ช่วยประหยัดเวลาให้คุณได้มาก
+ในความเป็นจริง คุณมักจะนำเวลาที่เหลือไปทำอะไรเป็นส่วนใหญ่?**
+1. พักผ่อน ดูแลสุขภาพ หรือใช้เวลากับคนรอบข้าง
+(Offline time)
+2. นำเวลาไปเรียนรู้ทักษะใหม่ๆ
+หรือพัฒนางานให้ดีขึ้น
+3. รับงานเพิ่มขึ้น
+เพื่อให้ได้ปริมาณผลงานที่มากขึ้น
+4. ใช้เวลาอยู่กับหน้าจอเหมือนเดิม (เช่น
+ไถโซเชียลมีเดีย, ดูซีรีส์)
+ 
+ -->
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแบบสอบถาม AI ไร้สัมผัส 6 ข้อ</title>
+    
+    <!-- โหลด MediaPipe และไลบรารีควบคุมกล้องผ่าน CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #2d3436;
+        }
+
+        /* กล่องหลักโครงสร้างแอป */
+        .app-container {
+            display: flex;
+            flex-direction: column; /* แบ่งเป็น 3 ส่วนในแนวนอนเด็ดขาด (บน กลาง ล่าง) */
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 850px;
+            overflow: hidden;
+        }
+
+        /* --------------------------------------------------
+           [ส่วนที่ 1] ส่วนของแสดงผลของกล้อง (บนสุด)
+        -------------------------------------------------- */
+        .part-1-camera {
+            width: 100%;
+            height: 320px; /* ความสูงพื้นที่กล้อง */
+            position: relative;
+            background-color: #2d3436;
+        }
+        #webcam, #output_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror ภาพให้ขยับตามมือได้เป็นธรรมชาติ */
+        }
+
+        /* --------------------------------------------------
+           [ส่วนที่ 2] ส่วนแสดงข้อความแจ้งเตือน / สถานะมือ (ตรงกลาง)
+        -------------------------------------------------- */
+        .part-2-message {
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #ffeaa7; /* พื้นหลังแถบข้อความ */
+            border-bottom: 2px solid #fab1a0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        #status-message {
+            color: #2d3436;
+        }
+        .detected-badge {
+            background: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            color: #d63031;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* --------------------------------------------------
+           [ส่วนที่ 3] ส่วนแสดงโจทย์และคำถาม (ล่างสุด)
+        -------------------------------------------------- */
+        .part-3-question {
+            width: 100%;
+            padding: 30px;
+            background-color: #ffffff;
+            min-height: 280px; /* การันตีพื้นที่สำหรับข้อความคำถามที่ยาวขึ้น */
+        }
+        h2 {
+            font-size: 1.4rem;
+            color: #0984e3;
+            margin-top: 0;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .options-list {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #636e72;
+            margin-bottom: 20px;
+        }
+        .instruction-box {
+            font-weight: bold;
+            color: #2d3436;
+            background-color: #e3faf2;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            border-left: 5px solid #2ecc71;
+        }
+        .progress-text {
+            font-size: 0.95rem;
+            color: #b2bec3;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* หน้าจอบังเวลาเปลี่ยนภาพชั่วคราวเพื่อความเสถียร */
+        .cooldown-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #0984e3;
+            z-index: 10;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- ส่วนที่ 1: กล้องเว็บแคม -->
+        <div class="part-1-camera">
+            <div class="cooldown-overlay" id="cooldown-screen">🔄 บันทึกคำตอบ... กำลังเปลี่ยนข้อถัดไป</div>
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas" width="850" height="320"></canvas>
+        </div>
+
+        <!-- ส่วนที่ 2: ข้อความแจ้งเตือนและสถานะมือแบบ Real-time -->
+        <div class="part-2-message">
+            <div id="status-message">กำลังเริ่มต้นระบบตรวจสอบกล้อง...</div>
+            <div class="detected-badge" id="live-gesture-box" style="display:none;">
+                มือตอนนี้: <span id="current-gesture">-</span>
+            </div>
+        </div>
+
+        <!-- ส่วนที่ 3: โจทย์คำถามและตัวเลือก -->
+        <div class="part-3-question">
+            <div id="main-text">
+                <h2>ระบบกำลังเตรียมความพร้อม...</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        
+        const statusMessage = document.getElementById('status-message');
+        const mainText = document.getElementById('main-text');
+        const liveGestureBox = document.getElementById('live-gesture-box');
+        const currentGestureText = document.getElementById('current-gesture');
+        const cooldownScreen = document.getElementById('cooldown-screen');
+
+        // คลังโจทย์คำถามทั้ง 6 ข้อตามที่แนบมา
+        const surveyQuestions = [
+            {
+                text: "ในช่วง 1 สัปดาห์ที่ผ่านมา คุณเรียกใช้งาน AI (เช่น Gemini, ChatGPT, Claude ฯลฯ) บ่อยแค่ไหน?",
+                options: [
+                    "แทบไม่ได้ใช้เลย หรือไม่ได้ใช้เลย",
+                    "1-3 วันต่อสัปดาห์ (ใช้เฉพาะกิจ)",
+                    "ใช้เกือบทุกวัน (วันละ 1-2 ครั้ง)",
+                    "ใช้หลายครั้งในแต่ละวัน (เปิดทิ้งไว้เป็นผู้ช่วยประจำตัว)"
+                ]
+            },
+            {
+                text: "เมื่อคุณต้องเริ่มต้นโปรเจกต์ใหม่ คิดงาน หรือแก้ปัญหาที่ซับซ้อน สิ่งแรกที่คุณมักจะทำคืออะไร?",
+                options: [
+                    "นั่งคิดและร่างโครงสร้างด้วยตัวเองก่อน",
+                    "ค้นหาข้อมูลทั่วไป หรือปรึกษาคนรอบข้าง",
+                    "พิมพ์ถาม AI ให้ช่วยโยนไอเดียหรือร่างโครงสร้างให้ทันที",
+                    "ให้ AI ทำให้ทั้งหมดแล้วค่อยนำมาเลือก"
+                ]
+            },
+            {
+                text: "เมื่อ AI ให้คำตอบที่ดูเหมือนจะถูกต้องและเป็นระเบียบเรียบร้อย คุณมักจะจัดการกับข้อมูลนั้นอย่างไร?",
+                options: [
+                    "ตรวจสอบความถูกต้องกับแหล่งข้อมูลอื่นที่เชื่อถือได้เสมอ",
+                    "อ่านทบทวนและปรับแก้สำนวนด้วยตัวเองก่อนนำไปใช้",
+                    "ก๊อปปี้ไปใช้งานทันที เพราะเชื่อมั่นว่า AI ประมวลผลมาดีแล้ว"
+                ]
+            },
+            {
+                text: "ลองสำรวจตัวเองอย่างซื่อสัตย์ คุณรู้สึกว่าความมั่นใจในการ \"ตัดสินใจ\" หรือ \"คิดวิเคราะห์\" ด้วยตัวเอง ลดลงบ้างหรือไม่ตั้งแต่มี AI เข้ามาช่วย?",
+                options: [
+                    "ไม่เลย ฉันยังมั่นใจในการคิดและตัดสินใจด้วยตัวเอง 100%",
+                    "มีบ้างบางครั้งที่อยากให้ AI ช่วยคอนเฟิร์มความคิด",
+                    "ลดลงพอสมควร เริ่มรู้สึกลังเลถ้าไม่ได้ถาม AI ก่อน",
+                    "ลดลงมาก แทบไม่กล้าฟันธงอะไรเลยถ้าไม่ได้เอาไปถาม AI"
+                ]
+            },
+            {
+                text: "สมมติว่าวันนี้ระบบ AI ล่มทั่วโลกใช้งานไม่ได้เลย และคุณมีงานหรือภารกิจสำคัญที่ต้องทำ คุณจะรู้สึกอย่างไร?",
+                options: [
+                    "ไม่กระทบเลย สามารถทำงานต่อไปได้ตามปกติ",
+                    "หงุดหงิดนิดหน่อย อาจจะทำงานช้าลงบ้างแต่จัดการได้",
+                    "กระวนกระวายใจ เริ่มเครียดว่าจะทำงานเสร็จไม่ทัน",
+                    "มืดแปดด้าน รู้สึกไปต่อไม่ถูก ทำงานไม่ได้เลย"
+                ]
+            },
+            {
+                text: "การใช้ AI ช่วยประหยัดเวลาให้คุณได้มาก ในความเป็นจริง คุณมักจะนำเวลาที่เหลือไปทำอะไรเป็นส่วนใหญ่?",
+                options: [
+                    "พักผ่อน ดูแลสุขภาพ หรือใช้เวลากับคนรอบข้าง (Offline time)",
+                    "นำเวลาไปเรียนรู้ทักษะใหม่ๆ หรือพัฒนางานให้ดีขึ้น",
+                    "รับงานเพิ่มขึ้น เพื่อให้ได้ปริมาณผลงานที่มากขึ้น",
+                    "ใช้เวลาอยู่กับหน้าจอเหมือนเดิม (เช่น ไถโซเชียลมีเดีย, ดูซีรีส์)"
+                ]
+            }
+        ];
+
+        // ตัวแปรควบคุมการทำงาน (State Machine)
+        let currentState = "WELCOME"; // WELCOME -> QUESTION -> CONFIRM -> THANKYOU
+        let currentQuestionIndex = 0; // ลำดับข้อคำถาม (0 - 5)
+        let tempSelectedAnswer = null; // คำตอบที่เลือกชั่วคราวในข้อนั้นๆ
+        let collectedAnswers = [];    // อาร์เรย์เก็บคำตอบทั้งหมดเพื่อนำไปคำนวณคะแนนรวม
+
+        // ตัวคัดกรองความนิ่งของท่าทางมือ (Debounce)
+        let stableGesture = -1;
+        let gestureCounter = 0;
+        const REQUIRED_FRAMES = 10; 
+        let isCooldown = false;
+
+        // ฟังก์ชันอัปเดตหน้าจอหลัก [ส่วนที่ 2] และ [ส่วนที่ 3]
+        function updateUI() {
+            liveGestureBox.style.display = "block";
+            
+            if (currentState === "WELCOME") {
+                statusMessage.innerText = "💡 ระบบตรวจความพร้อมก่อนเริ่มทำแบบสอบถาม";
+                mainText.innerHTML = `
+                    <h2>พร้อมจะตอบแบบสอบถามหรือยังครับ?<br>ถ้าพร้อมให้กำมือเป็นเลข 0 ชูหน้ากล้องครับ</h2>
+                `;
+            } 
+            else if (currentState === "QUESTION") {
+                const currentQuestion = surveyQuestions[currentQuestionIndex];
+                statusMessage.innerText = `📋 กำลังทำข้อถามข้อที่ ${currentQuestionIndex + 1} จากทั้งหมด 6 ข้อ`;
+                
+                // สร้างรายการตัวเลือกแบบไดนามิก
+                let optionsHTML = "";
+                currentQuestion.options.forEach((opt, index) => {
+                    optionsHTML += `${index + 1}. ${opt}<br>`;
+                });
+
+                mainText.innerHTML = `
+                    <div class="progress-text">Question ${currentQuestionIndex + 1} of 6</div>
+                    <h2>ข้อที่ ${currentQuestionIndex + 1}: ${currentQuestion.text}</h2>
+                    <div class="options-list">${optionsHTML}</div>
+                    <div class="instruction-box">👉 ชูนิ้วคำตอบที่หน้ากล้องได้เลยครับ (เลข 1 ถึง ${currentQuestion.options.length})</div>
+                `;
+            } 
+            else if (currentState === "CONFIRM") {
+                const currentQuestion = surveyQuestions[currentQuestionIndex];
+                statusMessage.innerText = `❓ ยืนยันคำตอบข้อที่ ${currentQuestionIndex + 1}`;
+                
+                mainText.innerHTML = `
+                    <div class="progress-text">Confirming Question ${currentQuestionIndex + 1}</div>
+                    <h2>คุณเลือกคำตอบเลข: <span style="color:#d63031;">${tempSelectedAnswer}</span></h2>
+                    <p style="font-size:1.1rem; color:#636e72; margin-bottom:20px;">
+                        <b>คำตอบที่เลือกคือ:</b> ${currentQuestion.options[tempSelectedAnswer - 1]}
+                    </p>
+                    <h3 style="margin-bottom:15px;">ยืนยันคำตอบนี้หรือไม่?</h3>
+                    <div class="options-list" style="font-size:1.05rem;">
+                        ✊ <b>ถ้ายืนยัน:</b> โชว์กำมือเป็นเลข 0 (เพื่อไปข้อถัดไป) <br>
+                        ✋ <b>ถ้าเปลี่ยนใจยกเลิก:</b> โชว์ 5 นิ้ว (เพื่อกลับไปเลือกใหม่ในข้อนี้)
+                    </div>
+                `;
+            } 
+            else if (currentState === "THANKYOU") {
+                statusMessage.innerText = "✅ ทำแบบสอบถามเสร็จสิ้นครบทุกข้อแล้ว";
+                
+                // คำนวณผลคะแนนรวมจากการตอบทั้ง 6 ข้อตามกติกา (เลือกข้อไหนได้คะแนนตามเลขข้อนั้น)
+                let totalScore = collectedAnswers.reduce((sum, score) => sum + score, 0);
+
+                mainText.innerHTML = `
+                    <h2>แสดงคะแนนรวมของคุณ: <span style="color:#00b894; font-size:2rem;">${totalScore} คะแนน</span></h2>
+                    <div class="options-list" style="font-size:1.1rem; background:#f1f2f6; padding:15px; border-radius:8px; line-height:1.6;">
+                        <b>สรุปประวัติการเลือกคำตอบของคุณ:</b><br>
+                        ${collectedAnswers.map((ans, idx) => `ข้อที่ ${idx + 1} ตอบตัวเลือกที่ ${ans} (ได้ ${ans} คะแนน)`).join('<br>')}
+                    </div>
+                    <h2 style="color:#2ecc71; text-align:center; margin-top:20px;">🙏 ขอบคุณครับ 🙏</h2>
+                    <div class="instruction-box" style="display:block; text-align:center;">🔄 ถ้าต้องการเล่นหรือตอบใหม่อีกครั้ง ให้กำมือเป็นเลข 0</div>
+                `;
+            }
+        }
+
+        // ฟังก์ชันควบคุมเอฟเฟกต์สลับหน้าจออย่างลื่นไหลและเสถียร
+        function triggerStateTransition(nextState) {
+            isCooldown = true;
+            cooldownScreen.style.display = "flex";
+            currentState = nextState;
+            gestureCounter = 0;
+            stableGesture = -1;
+
+            setTimeout(() => {
+                updateUI();
+                cooldownScreen.style.display = "none";
+                isCooldown = false;
+            }, 1400); // หน่วงเวลาเปิดโอกาสให้ผู้ใช้สลับท่าทางนิ้วมือ 1.4 วินาที
+        }
+
+        // ตรรกะกระบวนการคิดวิเคราะห์ตามท่าทางของนิ้วมือ
+        function processGestureLogic(gesture) {
+            if (isCooldown) return;
+
+            if (currentState === "WELCOME") {
+                if (gesture === 0) {
+                    currentQuestionIndex = 0;
+                    collectedAnswers = [];
+                    triggerStateTransition("QUESTION");
+                }
+            } 
+            else if (currentState === "QUESTION") {
+                const maxAvailableOptions = surveyQuestions[currentQuestionIndex].options.length;
+                // เช็คว่าผู้ใช้งานชูนิ้วตรงตามจำนวนตัวเลือกที่มีในข้อนั้นๆ หรือไม่
+                if (gesture >= 1 && gesture <= maxAvailableOptions) {
+                    tempSelectedAnswer = gesture;
+                    triggerStateTransition("CONFIRM");
+                }
+            } 
+            else if (currentState === "CONFIRM") {
+                if (gesture === 5) {
+                    tempSelectedAnswer = null;
+                    triggerStateTransition("QUESTION"); // ยกเลิก ย้อนกลับไปข้อเดิมเพื่อเลือกใหม่
+                } else if (gesture === 0) {
+                    // ยืนยันบันทึกคะแนนข้อนี้ลงอาร์เรย์
+                    collectedAnswers.push(tempSelectedAnswer);
+                    
+                    if (currentQuestionIndex < 5) {
+                        // ถ้ายังมีข้อถัดไป ให้ขยับข้อคำถามเพิ่มขึ้น 1
+                        currentQuestionIndex++;
+                        triggerStateTransition("QUESTION");
+                    } else {
+                        // ถ้าตอบครบทั้ง 6 ข้อแล้ว ส่งไปหน้าขอบคุณและรวมคะแนน
+                        triggerStateTransition("THANKYOU");
+                    }
+                }
+            } 
+            else if (currentState === "THANKYOU") {
+                if (gesture === 0) {
+                    // รีเซ็ตค่าระบบเพื่อเริ่มเล่นใหม่อีกครั้ง
+                    currentQuestionIndex = 0;
+                    collectedAnswers = [];
+                    tempSelectedAnswer = null;
+                    triggerStateTransition("QUESTION");
+                }
+            }
+        }
+
+        // ฟังก์ชันรับข้อมูลภาพสดและวาดโครงกระดูกจาก MediaPipe
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let currentFrameGesture = -1;
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const handedness = results.multiHandedness[0].label;
+
+                // วาดกราฟิกโครงข้อมือบนส่วนที่ 1
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00cec9', lineWidth: 4});
+                drawLandmarks(canvasCtx, landmarks, {color: '#ff7675', lineWidth: 1, radius: 3});
+
+                // ตรรกะนับจำนวนนิ้วมือ
+                let count = 0;
+
+                // 1. ตรวจสอบนิ้วโป้ง (เช็คการกางแนวระนาบแกน X)
+                if (handedness === 'Left') {
+                    if (landmarks[4].x > landmarks[3].x) count++;
+                } else {
+                    if (landmarks[4].x < landmarks[3].x) count++;
+                }
+                // 2. นิ้วชี้
+                if (landmarks[8].y < landmarks[6].y) count++;
+                // 3. นิ้วกลาง
+                if (landmarks[12].y < landmarks[10].y) count++;
+                // 4. นิ้วนาง
+                if (landmarks[16].y < landmarks[14].y) count++;
+                // 5. นิ้วก้อย
+                if (landmarks[20].y < landmarks[18].y) count++;
+
+                currentFrameGesture = count;
+            }
+
+            // แสดงสถานะการตรวจจับนิ้วสดใน [ส่วนที่ 2]
+            if (currentFrameGesture === 0) {
+                currentGestureText.innerText = "0 (กำมือ)";
+            } else if (currentFrameGesture > 0) {
+                currentGestureText.innerText = currentFrameGesture + " นิ้ว";
+            } else {
+                currentGestureText.innerText = "รอชูนิ้วหน้ากล้อง...";
+            }
+
+            // ฟิลเตอร์ตรวจสอบความนิ่งของมือเพื่อความเสถียรสูงสุด
+            if (currentFrameGesture !== -1 && !isCooldown) {
+                if (currentFrameGesture === stableGesture) {
+                    gestureCounter++;
+                    if (gestureCounter >= REQUIRED_FRAMES) {
+                        processGestureLogic(stableGesture);
+                        gestureCounter = 0;
+                    }
+                } else {
+                    stableGesture = currentFrameGesture;
+                    gestureCounter = 0;
+                }
+            } else {
+                gestureCounter = 0;
+            }
+
+            canvasCtx.restore();
+        }
+
+        // ตั้งค่าโมเดลการทำงานหลักของไลบรารี MediaPipe Hands
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+        hands.onResults(onResults);
+
+        // จัดการระบบกล้อง ตรวจสอบ และสั่งรันเริ่มต้นอุปกรณ์
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 850,
+            height: 320
+        });
+
+        camera.start()
+            .then(() => {
+                updateUI(); // รันสเตทแรก (WELCOME) เมื่อผู้ใช้ยอมรับสิทธิ์เปิดกล้องเรียบร้อย
+            })
+            .catch((err) => {
+                statusMessage.innerText = "❌ เกิดข้อผิดพลาดในการดึงระบบกล้อง";
+                mainText.innerHTML = `
+                    <h2>ไม่สามารถเชื่อมต่อกล้องเว็บแคมได้</h2>
+                    <p style="color:#d63031; font-weight:bold;">กรุณากดคลิกปุ่ม "อนุญาตให้เข้าถึงกล้อง" (Allow Camera) ด้านบนบราวเซอร์เพื่อทำแบบสอบถามต่อครับ</p>
+                `;
+                console.error("Camera detection error:", err);
+            });
+    </script>
+</body>
+</html>
