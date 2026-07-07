@@ -1,0 +1,386 @@
+<!--Gemini prompt
+เขียน html file ให้มีความสามารถดังนี้
+1. ตรวจสอบการเปิดกล้องของเครื่องมือ ถ้ายังไม่เปิดกล้องให้เปิดกล้องก่อน
+2. แสดงข้อความ "พร้อมจะตอบแบบสอบถามหรือยังครับ ถ้าพร้อมให้กำมือเป็นเลข 0 ชูหน้ากล้องครับ"
+3.เมื่อผู้ใช้งานกำมือเป็นเลข 0  ให้เปลี่ยนหน้าจอโดยทางซ้าย พิมพ์โจทย์คำถามว่า "คุณชอบกินผลไม้อะไรครับ  1 กล้วย 2 ส้ม 3 มังคุด 4 ไม่ชอบกินผลไม้"  ชูนิ้วคำตอบที่หน้ากล้องได้เลยครับ
+3. เมื่อผู้ใช้ชูนิ้ว ดูนิ้วที่โชว์ผ่านกล้อง แล้วตอบเป็นข้อความว่า โชว์เลขอะไรเช่น 1  2  3  4   ยืนยันหรือไม่ ถ้ายืนยันโชว์กำมือเป็นเลข 0   ยกเลิกโชว์ 5 นิ้ว   ถ้าผู้ใช้โชว์ 5 นิ้ว   ให้ย้อนกลับไปถามใหม่ แต่ถ้าโชว์กำมือเป็นเลข 0 ให้แสดงคะแนน  ถ้าเลือก 1 ได้ 1 คะแนน เลือก 2 ได้ 2 คะแนน เลือก 3 ได้ 3 คะแนน เลือก 4 ได้ 4 คะแนน" และแสดงข้อความ ขอบคุณครับ  ถ้าต้องการเล่นใหม่ให้กำมือเป็นเลข 0
+แก้ไขครั้งที่ 1 :  ขอแก้ไข code ในการแสดงผลโดยแบ่งจอเป็นแนวนอนออกเป็น 3 ส่วน  ส่วนที่ 1 เป็นส่วนของการแสดงผลของกล้อง  ส่วนที่ 2-3  เป็นส่วนแสดงข้อความและคำถาม
+ -->
+
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแบบสอบถามไร้สัมผัสด้วย AI (Horizontal 3 Parts)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #2d3436;
+        }
+
+        /* กล่องหลักโครงสร้างแอป */
+        .app-container {
+            display: flex;
+            flex-direction: column; /* บังคับแบ่งเป็น 3 ส่วนในแนวนอน (บน กลาง ล่าง) */
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+
+        /* --------------------------------------------------
+           [ส่วนที่ 1] ส่วนของแสดงผลของกล้อง (บนสุด)
+        -------------------------------------------------- */
+        .part-1-camera {
+            width: 100%;
+            height: 350px; /* กำหนดความสูงพื้นที่กล้อง */
+            position: relative;
+            background-color: #2d3436;
+        }
+        #webcam, #output_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror ภาพให้ขยับตามมือได้เป็นธรรมชาติ */
+        }
+
+        /* --------------------------------------------------
+           [ส่วนที่ 2] ส่วนแสดงข้อความแจ้งเตือน / สถานะมือ (ตรงกลาง)
+        -------------------------------------------------- */
+        .part-2-message {
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #ffeaa7; /* พื้นหลังแถบข้อความ */
+            border-bottom: 2px solid #fab1a0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        #status-message {
+            color: #2d3436;
+        }
+        .detected-badge {
+            background: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            color: #d63031;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* --------------------------------------------------
+           [ส่วนที่ 3] ส่วนแสดงโจทย์และคำถาม (ล่างสุด)
+        -------------------------------------------------- */
+        .part-3-question {
+            width: 100%;
+            padding: 30px;
+            background-color: #ffffff;
+            min-height: 220px; /* การันตีพื้นที่แสดงคำถามไม่ให้บีบตัว */
+        }
+        h2 {
+            font-size: 1.6rem;
+            color: #0984e3;
+            margin-top: 0;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        .options-list {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: #636e72;
+            margin-bottom: 20px;
+        }
+        .instruction-box {
+            font-weight: bold;
+            color: #2d3436;
+            background-color: #e3faf2;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            border-left: 5px solid #2ecc71;
+        }
+
+        /* หน้าจอบังเวลาเปลี่ยนภาพชั่วคราวเพื่อความเสถียร */
+        .cooldown-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #0984e3;
+            z-index: 10;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="part-1-camera">
+            <div class="cooldown-overlay" id="cooldown-screen">🔄 บันทึกท่าทาง... กำลังเปลี่ยนหน้าจอ</div>
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas" width="800" height="350"></canvas>
+        </div>
+
+        <div class="part-2-message">
+            <div id="status-message">ระบบตรวจจับความพร้อมด้วย AI...</div>
+            <div class="detected-badge" id="live-gesture-box" style="display:none;">
+                มือตอนนี้: <span id="current-gesture">-</span>
+            </div>
+        </div>
+
+        <div class="part-3-question">
+            <div id="main-text">
+                <h2>ระบบกำลังเตรียมความพร้อม...</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        
+        const statusMessage = document.getElementById('status-message');
+        const mainText = document.getElementById('main-text');
+        const liveGestureBox = document.getElementById('live-gesture-box');
+        const currentGestureText = document.getElementById('current-gesture');
+        const cooldownScreen = document.getElementById('cooldown-screen');
+
+        // การจัดการสถานะคำถาม (WELCOME -> QUESTION -> CONFIRM -> THANKYOU)
+        let currentState = "WELCOME"; 
+        let selectedAnswer = null;
+        let finalScore = 0;
+        
+        // ตัวกรองความนิ่งของนิ้ว (ต้องทำท่าเดิมค้างไว้ 10 เฟรมเพื่อป้องกันการตรวจจับพลาด)
+        let stableGesture = -1;
+        let gestureCounter = 0;
+        const REQUIRED_FRAMES = 10; 
+        let isCooldown = false;
+
+        const fruitMap = { 1: "กล้วย", 2: "ส้ม", 3: "มังคุด", 4: "ไม่ชอบกินผลไม้" };
+
+        // ฟังก์ชันหลักในการเปลี่ยนเนื้อหาหน้าจอใน [ส่วนที่ 2] และ [ส่วนที่ 3]
+        function updateUI() {
+            liveGestureBox.style.display = "block";
+            
+            if (currentState === "WELCOME") {
+                statusMessage.innerText = "💡 กรุณาเตรียมตัวเปิดกล้อง";
+                mainText.innerHTML = `
+                    <h2>พร้อมจะตอบแบบสอบถามหรือยังครับ?<br>ถ้าพร้อมให้กำมือเป็นเลข 0 ชูหน้ากล้องครับ</h2>
+                `;
+            } 
+            else if (currentState === "QUESTION") {
+                statusMessage.innerText = "📋 กรุณาเลือกคำตอบของคุณ";
+                mainText.innerHTML = `
+                    <h2>คุณชอบกินผลไม้อะไรครับ?</h2>
+                    <div class="options-list">
+                        1. กล้วย <br>
+                        2. ส้ม <br>
+                        3. มังคุด <br>
+                        4. ไม่ชอบกินผลไม้
+                    </div>
+                    <div class="instruction-box">👉 ชูนิ้วคำตอบที่หน้ากล้องได้เลยครับ (เลข 1 - 4)</div>
+                `;
+            } 
+            else if (currentState === "CONFIRM") {
+                statusMessage.innerText = "❓ ตรวจสอบการยืนยัน";
+                mainText.innerHTML = `
+                    <h2>โชว์เลข: <span style="color:#d63031;">${selectedAnswer} (${fruitMap[selectedAnswer]})</span></h2>
+                    <h3 style="margin-top:10px; margin-bottom:15px; color:#2d3436;">ยืนยันคำตอบนี้หรือไม่?</h3>
+                    <div class="options-list" style="font-size:1.1rem;">
+                        ✊ <b>ถ้ายืนยัน:</b> โชว์กำมือเป็นเลข 0 <br>
+                        ✋ <b>ถ้าชกเลิก:</b> โชว์ 5 นิ้ว (เพื่อย้อนกลับไปถามใหม่)
+                    </div>
+                `;
+            } 
+            else if (currentState === "THANKYOU") {
+                statusMessage.innerText = "✅ บันทึกข้อมูลสำเร็จ";
+                finalScore = selectedAnswer; // คะแนนตามเลขที่เลือก
+
+                mainText.innerHTML = `
+                    <h2>แสดงคะแนน: คุณได้รับ <span style="color:#00b894;">${finalScore} คะแนน</span></h2>
+                    <div class="options-list" style="font-size:1.1rem; background:#f1f2f6; padding:12px; border-radius:8px;">
+                        (กติกา: เลือก 1 ได้ 1 คะแนน | เลือก 2 ได้ 2 คะแนน | เลือก 3 ได้ 3 คะแนน | เลือก 4 ได้ 4 คะแนน)
+                    </div>
+                    <h2 style="color:#2ecc71; text-align:center; margin-top:20px;">🙏 ขอบคุณครับ 🙏</h2>
+                    <div class="instruction-box" style="display:block; text-align:center;">🔄 ถ้าต้องการเล่นใหม่ให้กำมือเป็นเลข 0</div>
+                `;
+            }
+        }
+
+        // ระบบหน่วงเวลาตอนเปลี่ยนสถานะ เพื่อป้องกันนิ้วมือเปลี่ยนท่าไม่ทัน
+        function triggerStateTransition(nextState) {
+            isCooldown = true;
+            cooldownScreen.style.display = "flex";
+            currentState = nextState;
+            gestureCounter = 0;
+            stableGesture = -1;
+
+            setTimeout(() => {
+                updateUI();
+                cooldownScreen.style.display = "none";
+                isCooldown = false;
+            }, 1500); // หน่วงเวลา 1.5 วินาที
+        }
+
+        // ถอดรหัสเงื่อนไขการทำงานตามท่าทางมือ
+        function processGestureLogic(gesture) {
+            if (isCooldown) return;
+
+            if (currentState === "WELCOME") {
+                if (gesture === 0) {
+                    triggerStateTransition("QUESTION");
+                }
+            } 
+            else if (currentState === "QUESTION") {
+                if (gesture >= 1 && gesture <= 4) {
+                    selectedAnswer = gesture;
+                    triggerStateTransition("CONFIRM");
+                }
+            } 
+            else if (currentState === "CONFIRM") {
+                if (gesture === 5) {
+                    selectedAnswer = null;
+                    triggerStateTransition("QUESTION"); // ยกเลิก ย้อนกลับไปถามใหม่
+                } else if (gesture === 0) {
+                    triggerStateTransition("THANKYOU"); // ยืนยัน ไปหน้าแสดงคะแนน
+                }
+            } 
+            else if (currentState === "THANKYOU") {
+                if (gesture === 0) {
+                    selectedAnswer = null;
+                    finalScore = 0;
+                    triggerStateTransition("QUESTION"); // เริ่มใหม่
+                }
+            }
+        }
+
+        // ฟังก์ชันรับสตรีมจาก MediaPipe Hands
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let currentFrameGesture = -1;
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const handedness = results.multiHandedness[0].label;
+
+                // วาดเส้นข้อต่อนิ้วมือลงบน Canvas ส่วนที่ 1
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00cec9', lineWidth: 4});
+                drawLandmarks(canvasCtx, landmarks, {color: '#ff7675', lineWidth: 1, radius: 3});
+
+                // ตรรกะการนับจำนวนนิ้วมือ
+                let count = 0;
+
+                // 1. นิ้วโป้ง (เช็คการกางแกน X)
+                if (handedness === 'Left') {
+                    if (landmarks[4].x > landmarks[3].x) count++;
+                } else {
+                    if (landmarks[4].x < landmarks[3].x) count++;
+                }
+                // 2. นิ้วชี้
+                if (landmarks[8].y < landmarks[6].y) count++;
+                // 3. นิ้วกลาง
+                if (landmarks[12].y < landmarks[10].y) count++;
+                // 4. นิ้วนาง
+                if (landmarks[16].y < landmarks[14].y) count++;
+                // 5. นิ้วก้อย
+                if (landmarks[20].y < landmarks[18].y) count++;
+
+                currentFrameGesture = count;
+            }
+
+            // อัปเดตข้อความจำนวนนิ้วใน [ส่วนที่ 2]
+            if (currentFrameGesture === 0) {
+                currentGestureText.innerText = "0 (กำมือ)";
+            } else if (currentFrameGesture > 0) {
+                currentGestureText.innerText = currentFrameGesture + " นิ้ว";
+            } else {
+                currentGestureText.innerText = "รอชูนิ้วหน้ากล้อง...";
+            }
+
+            // ตรวจสอบค่านิ่งของมือ (Debounce ทำท่าค้างไว้)
+            if (currentFrameGesture !== -1 && !isCooldown) {
+                if (currentFrameGesture === stableGesture) {
+                    gestureCounter++;
+                    if (gestureCounter >= REQUIRED_FRAMES) {
+                        processGestureLogic(stableGesture);
+                        gestureCounter = 0;
+                    }
+                } else {
+                    stableGesture = currentFrameGesture;
+                    gestureCounter = 0;
+                }
+            } else {
+                gestureCounter = 0;
+            }
+
+            canvasCtx.restore();
+        }
+
+        // คอนฟิกหลักของระบบตรวจจับมือ MediaPipe
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+        hands.onResults(onResults);
+
+        // ตรวจสอบและร้องขอการเปิดกล้องเว็บแคม
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 800,
+            height: 350
+        });
+
+        camera.start()
+            .then(() => {
+                updateUI(); // โหลดหน้าสเตทแรกเมื่อกล้องพร้อมทำงานสำเร็จ
+            })
+            .catch((err) => {
+                statusMessage.innerText = "❌ กล้องขัดข้อง";
+                mainText.innerHTML = `
+                    <h2>ไม่สามารถเปิดใช้งานกล้องได้</h2>
+                    <p style="color:red;">กรุณากดอนุญาตสิทธิ์เข้าถึงกล้อง (Allow Camera) บนบราวเซอร์ของคุณเพื่อเริ่มต้นระบบ</p>
+                `;
+                console.error("Camera error:", err);
+            });
+    </script>
+</body>
+</html>
