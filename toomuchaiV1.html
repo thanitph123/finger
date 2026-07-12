@@ -1,0 +1,502 @@
+<!--gemini dekyothin1@gmail.com
+คุณเชียน code ได้ดีมากครับ  อยากให้เพิ่ม code ตรวจสอบว่า ถ้าผู้ใช้เปิดโปรแกรมด้วย notebook หรือ pc ให้กล้องไปอยู่ด้านซ็ายของจอภาพ แต่ถ้าเครื่องมืออื่นให้กล้องอยู่ด้านบนเหมือนเดิม https://share.gemini.google/g8NvTzqTgDlq -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแบบสอบถามพฤติกรรมการใช้ AI แบบไร้สัมผัส (Responsive Layout)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #2d3436;
+        }
+
+        /* ==================================================
+           [โครงสร้างเริ่มต้น] สำหรับมือถือ / แท็บเล็ต (กล้องอยู่ด้านบน)
+        ================================================== */
+        .app-container {
+            display: flex;
+            flex-direction: column; 
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 850px;
+            overflow: hidden;
+        }
+
+        /* [ส่วนที่ 1] กล้องเว็บแคม (บนสุดในมือถือ) */
+        .part-1-camera {
+            width: 100%;
+            height: 320px;
+            position: relative;
+            background-color: #2d3436;
+        }
+        #webcam, #output_canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror ภาพ */
+        }
+
+        /* [ส่วนที่ 2] แถบแจ้งเตือนสถานะมือ (ตรงกลาง) */
+        .part-2-message {
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #ffeaa7; 
+            border-bottom: 2px solid #fab1a0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        #status-message {
+            color: #2d3436;
+        }
+        .detected-badge {
+            background: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            color: #d63031;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* [ส่วนที่ 3] ส่วนแสดงโจทย์คำถาม (ล่างสุด) */
+        .part-3-question {
+            width: 100%;
+            padding: 30px;
+            background-color: #ffffff;
+            min-height: 340px;
+        }
+        h2 {
+            font-size: 1.4rem;
+            color: #0984e3;
+            margin-top: 0;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .options-list {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #636e72;
+            margin-bottom: 20px;
+        }
+        .instruction-box {
+            font-weight: bold;
+            color: #2d3436;
+            background-color: #e3faf2;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+            border-left: 5px solid #2ecc71;
+            width: 100%;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #0984e3;
+            z-index: 10;
+            display: none;
+        }
+
+        /* ==================================================
+           [ส่วนที่เพิ่มใหม่] สำหรับ Notebook / PC (หน้าจอกว้าง 850px ขึ้นไป)
+           เปลี่ยนกล้องไปอยู่ฝั่งซ้าย ส่วนคำถามและสถานะย้ายไปฝั่งขวา
+        ================================================== */
+        @media (min-width: 850px) {
+            body {
+                padding: 30px;
+            }
+            .app-container {
+                display: grid;
+                grid-template-columns: 420px 1fr; /* ฝั่งซ้าย (กล้อง) กว้าง 420px | ฝั่งขวา (ข้อความ) ยืดตามจริง */
+                grid-template-rows: auto 1fr;
+                max-width: 1050px;
+                height: 580px; /* ล็อกความสูงโดยรวมให้พอดีหน้าจอคอมพิวเตอร์ดูสวยงาม */
+            }
+            .part-1-camera {
+                grid-column: 1;
+                grid-row: 1 / span 2; /* ให้กล้องกินพื้นที่ยาวลงมาเต็มฝั่งซ้าย */
+                height: 100%; 
+            }
+            .part-2-message {
+                grid-column: 2;
+                grid-row: 1; /* แถบสถานะอยู่ฝั่งขวา บนสุด */
+            }
+            .part-3-question {
+                grid-column: 2;
+                grid-row: 2; /* โจทย์คำถามอยู่ฝั่งขวา ล่างแถบสถานะ */
+                min-height: unset;
+                overflow-y: auto; /* หากเนื้อหาในหน้าสรุปยาว สามารถสกรอลล์อ่านเฉพาะฝั่งขวาได้ */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="part-1-camera">
+            <div class="cooldown-overlay" id="cooldown-screen">🔄 บันทึกข้อมูลคำตอบ... กำลังไปข้อถัดไป</div>
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas"></canvas> </div>
+
+        <div class="part-2-message">
+            <div id="status-message">กำลังตรวจสอบระบบตรวจจับสิทธิ์กล้อง AI...</div>
+            <div class="detected-badge" id="live-gesture-box" style="display:none;">
+                มือตอนนี้: <span id="current-gesture">-</span>
+            </div>
+        </div>
+
+        <div class="part-3-question">
+            <div id="main-text">
+                <h2>ระบบกำลังเตรียมความพร้อมคำถาม...</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        
+        const statusMessage = document.getElementById('status-message');
+        const mainText = document.getElementById('main-text');
+        const liveGestureBox = document.getElementById('live-gesture-box');
+        const currentGestureText = document.getElementById('current-gesture');
+        const cooldownScreen = document.getElementById('cooldown-screen');
+
+        const questionsDatabase = [
+            {
+                title: "ข้อ 1: ในช่วง 1 สัปดาห์ที่ผ่านมา คุณเรียกใช้งาน AI (เช่น Gemini, ChatGPT, Claude ฯลฯ) บ่อยแค่ไหน?",
+                options: [
+                    "แทบไม่ได้ใช้เลย หรือไม่ได้ใช้เลย",
+                    "1-3 วันต่อสัปดาห์ (ใช้เฉพาะกิจ)",
+                    "ใช้เกือบทุกวัน (วันละ 1-2 ครั้ง)",
+                    "ใช้หลายครั้งในแต่ละวัน (เปิดทิ้งไว้เป็นผู้ช่วยประจำตัว)"
+                ]
+            },
+            {
+                title: "ข้อ 2: เมื่อคุณต้องเริ่มต้นโปรเจกต์ใหม่ คิดงาน หรือแก้ปัญหาที่ซับซ้อน สิ่งแรกที่คุณมักจะทำคืออะไร?",
+                options: [
+                    "นั่งคิดและร่างโครงสร้างด้วยตัวเองก่อน",
+                    "ค้นหาข้อมูลทั่วไป หรือปรึกษาคนรอบข้าง",
+                    "พิมพ์ถาม AI ให้ช่วยโยนไอเดียหรือร่างโครงสร้างให้ทันที",
+                    "ให้ AI ทำให้ทั้งหมดแล้วค่อยนำมาเลือก"
+                ]
+            },
+            {
+                title: "ข้อ 3: เมื่อ AI ให้คำตอบที่ดูเหมือนจะถูกต้องและเป็นระเบียบเรียบร้อย คุณมักจะจัดการกับข้อมูลนั้นอย่างไร?",
+                options: [
+                    "ตรวจสอบความถูกต้องกับแหล่งข้อมูลอื่นที่เชื่อถือได้เสมอ",
+                    "อ่านทบทวนและปรับแก้สำนวนด้วยตัวเองก่อนนำไปใช้",
+                    "ก๊อปปี้ไปใช้งานทันที เพราะเชื่อมั่นว่า AI ประมวลผลมาดีแล้ว"
+                ]
+            },
+            {
+                title: "ข้อ 4: ลองสำรวจตัวเองอย่างซื่อสัตย์ คุณรู้สึกว่าความมั่นใจในการ 'ตัดสินใจ' หรือ 'คิดวิเคราะห์' ด้วยตัวเอง ลดลงบ้างหรือไม่ตั้งแต่มี AI เข้ามาช่วย?",
+                options: [
+                    "ไม่เลย ฉันยังมั่นใจในการคิดและตัดสินใจด้วยตัวเอง 100%",
+                    "มีบ้างบางครั้งที่อยากให้ AI ช่วยคอนเฟิร์มความคิด",
+                    "ลดลงพอสมควร เริ่มรู้สึกลังเลถ้าไม่ได้ถาม AI ก่อน",
+                    "ลดลงมาก แทบไม่กล้าฟันธงอะไรเลยถ้าไม่ได้เอาไปถาม AI"
+                ]
+            },
+            {
+                title: "ข้อ 5: สมมติว่าวันนี้ระบบ AI ล่มทั่วโลกใช้งานไม่ได้เลย และคุณมีงานหรือภารกิจสำคัญที่ต้องทำ คุณจะรู้สึกอย่างไร?",
+                options: [
+                    "ไม่กระทบเลย สามารถทำงานต่อไปได้ตามปกติ",
+                    "หงุดหงิดนิดหน่อย อาจจะทำงานช้าลงบ้างแต่จัดการได้",
+                    "กระวนกระวายใจ เริ่มเครียดว่าจะทำงานเสร็จไม่ทัน",
+                    "มืดแปดด้าน รู้สึกไปต่อไม่ถูก ทำงานไม่ได้เลย"
+                ]
+            },
+            {
+                title: "ข้อ 6: การใช้ AI ช่วยประหยัดเวลาให้คุณได้มาก ในความเป็นจริง คุณมักจะนำเวลาที่เหลือไปทำอะไรเป็นส่วนใหญ่?",
+                options: [
+                    "พักผ่อน ดูแลสุขภาพ หรือใช้เวลากับคนรอบข้าง (Offline time)",
+                    "นำเวลาไปเรียนรู้ทักษะใหม่ๆ หรือพัฒนางานให้ดีขึ้น",
+                    "รับงานเพิ่มขึ้น เพื่อให้ได้ปริมาณผลงานที่มากขึ้น",
+                    "ใช้เวลาอยู่กับหน้าจอเหมือนเดิม (เช่น ไถโซเชียลมีเดีย, ดูซีรีส์)"
+                ]
+            }
+        ];
+
+        let currentState = "WELCOME"; 
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        let userAnswersScore = []; 
+        
+        let stableGesture = -1;
+        let gestureCounter = 0;
+        const REQUIRED_FRAMES = 12; 
+        let isCooldown = false;
+
+        function updateUI() {
+            liveGestureBox.style.display = "block";
+            
+            if (currentState === "WELCOME") {
+                statusMessage.innerText = "💡 กรุณาตรวจสอบความพร้อม";
+                mainText.innerHTML = `
+                    <h2 style="font-size:1.6rem; text-align:center; margin-top:20px;">
+                        พร้อมจะตอบแบบสอบถามหรือยังครับ?<br>ถ้าพร้อมให้กำมือเป็นเลข 0 ชูหน้ากล้องครับ
+                    </h2>
+                `;
+            } 
+            else if (currentState === "QUESTION") {
+                const currentData = questionsDatabase[currentQuestionIndex];
+                statusMessage.innerText = `📋 กำลังทำข้อที่ ${currentQuestionIndex + 1} / 6`;
+                
+                let optionsHTML = "";
+                currentData.options.forEach((opt, idx) => {
+                    optionsHTML += `${idx + 1}. ${opt}<br>`;
+                });
+
+                mainText.innerHTML = `
+                    <h2>${currentData.title}</h2>
+                    <div class="options-list">
+                        ${optionsHTML}
+                    </div>
+                    <div class="instruction-box">👉 ชูนิ้วคำตอบที่หน้ากล้องได้เลยครับ (เลือกเลข 1 ถึง ${currentData.options.length})</div>
+                `;
+            } 
+            else if (currentState === "CONFIRM") {
+                const currentData = questionsDatabase[currentQuestionIndex];
+                statusMessage.innerText = `❓ ยืนยันคำตอบข้อที่ ${currentQuestionIndex + 1}`;
+                
+                const optionText = currentData.options[selectedAnswer - 1];
+
+                mainText.innerHTML = `
+                    <h2>คุณโชว์เลข: <span style="color:#d63031;">${selectedAnswer}</span></h2>
+                    <p style="font-size:1.1rem; background:#f5f6fa; padding:10px; border-radius:6px;">
+                        <b>คำตอบที่เลือก:</b> ${optionText}
+                    </p>
+                    <h3 style="margin-top:20px; margin-bottom:15px; color:#2d3436;">ยืนยันข้อความคำตอบนี้หรือไม่?</h3>
+                    <div class="options-list" style="font-size:1.1rem;">
+                        ✊ <b>ถ้ายืนยัน:</b> โชว์กำมือเป็นเลข 0 <br>
+                        ✋ <b>ถ้าเปลี่ยนใจยกเลิก:</b> โชว์ 5 นิ้ว (เพื่อย้อนกลับไปเลือกข้อนี้ใหม่)
+                    </div>
+                `;
+            } 
+            else if (currentState === "THANKYOU") {
+                statusMessage.innerText = "✅ แบบสอบถามเสร็จสมบูรณ์";
+                
+                let totalScore = userAnswersScore.reduce((sum, score) => sum + score, 0);
+
+                let evaluationHTML = "";
+                if (totalScore < 18) {
+                    evaluationHTML = `
+                        <div style="font-size: 1.6rem; font-weight: bold; color: #2ecc71; margin: 20px 0; line-height: 1.6; text-align: center;">
+                            "คุณใช้ AI ได้อย่างสมดุลครับ"
+                        </div>
+                        <p style="font-size: 1.2rem; text-align: center; margin: 15px 0 0 0; font-weight: bold;">
+                           
+                            <a href="https://tliidp-my.sharepoint.com/:f:/g/personal/thanitp_thailife_com/IgCoo3B_r28yR7336QRqST3OAZRJTOLee_P3MtgdrHLKa1Q" target="_blank" style="color: #0984e3; text-decoration: underline; margin-left: 5px;"> ศึกษาข้อมูลเพิ่มเติมที่ Guidebook คลิกที่นี่ครับ</a>
+                        </p>`;
+                } else {
+                    evaluationHTML = `
+                        <div style="font-size: 1.6rem; font-weight: bold; color: #e74c3c; margin: 20px 0; line-height: 1.6; text-align: center;">
+                            "คุณใช้ AI มากไปนิดนึงครับ"
+                        </div>
+                        <p style="font-size: 1.2rem; text-align: center; margin: 15px 0 0 0; font-weight: bold;">
+                            
+                            <a href="https://tliidp-my.sharepoint.com/:f:/g/personal/thanitp_thailife_com/IgDa4lC6bRb7RI-b0wRlwSn6Ac5ldpjI0V-pEFh2te9p9Tc" target="_blank" style="color: #0984e3; text-decoration: underline; margin-left: 5px;">ศึกษาข้อมูลเพิ่มเติมที่ Guidebook คลิกที่นี่ครับ</a>
+                        </p>`;
+                }
+
+                mainText.innerHTML = `
+                    <h2 style="text-align:center; color:#0984e3; font-size:1.6rem; margin-bottom: 5px;">สรุปผลคะแนนประเมินของคุณ</h2>
+                    <div style="text-align:center; margin-bottom:10px;">
+                        <span style="font-size: 2.5rem; font-weight: bold; color: #2d3436;">${totalScore}</span> 
+                        <span style="font-size: 1.2rem; color:#636e72;"> คะแนน (เต็ม 23 คะแนน)</span>
+                    </div>
+                    
+                    <div style="background: #fffdf0; padding: 20px; border-radius: 12px; border: 1px solid #ffeaa7; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+                        ${evaluationHTML}
+                    </div>
+                    
+                    <h2 style="color:#2ecc71; text-align:center; margin-top:10px; margin-bottom: 15px;">🙏 ขอบคุณครับ 🙏</h2>
+                    <div class="instruction-box" style="text-align:center;">🔄 ถ้าต้องการเล่นใหม่อีกครั้งให้กำมือเป็นเลข 0</div>
+                `;
+            }
+        }
+
+        function triggerStateTransition(nextState) {
+            isCooldown = true;
+            cooldownScreen.style.display = "flex";
+            currentState = nextState;
+            gestureCounter = 0;
+            stableGesture = -1;
+
+            setTimeout(() => {
+                updateUI();
+                cooldownScreen.style.display = "none";
+                isCooldown = false;
+            }, 1400); 
+        }
+
+        function processGestureLogic(gesture) {
+            if (isCooldown) return;
+
+            if (currentState === "WELCOME") {
+                if (gesture === 0) {
+                    currentQuestionIndex = 0;
+                    userAnswersScore = [];
+                    triggerStateTransition("QUESTION");
+                }
+            } 
+            else if (currentState === "QUESTION") {
+                let maxAllowedOptions = questionsDatabase[currentQuestionIndex].options.length;
+                if (gesture >= 1 && gesture <= maxAllowedOptions) {
+                    selectedAnswer = gesture;
+                    triggerStateTransition("CONFIRM");
+                }
+            } 
+            else if (currentState === "CONFIRM") {
+                if (gesture === 5) {
+                    selectedAnswer = null;
+                    triggerStateTransition("QUESTION"); 
+                } else if (gesture === 0) {
+                    userAnswersScore[currentQuestionIndex] = selectedAnswer;
+                    selectedAnswer = null;
+
+                    if (currentQuestionIndex < questionsDatabase.length - 1) {
+                        currentQuestionIndex++;
+                        triggerStateTransition("QUESTION"); 
+                    } else {
+                        triggerStateTransition("THANKYOU"); 
+                    }
+                }
+            } 
+            else if (currentState === "THANKYOU") {
+                if (gesture === 0) {
+                    currentQuestionIndex = 0;
+                    userAnswersScore = [];
+                    selectedAnswer = null;
+                    triggerStateTransition("QUESTION"); 
+                }
+            }
+        }
+
+        function onResults(results) {
+            // [ส่วนแก้ไขเพิ่มเติม] บังคับให้ขนาดพิกเซลของ Canvas วาดภาพตรงกับขนาดการแสดงผลบน CSS จริง ไม่ว่าจะอยู่ซ้ายหรืออยู่บน
+            if (canvasElement.width !== canvasElement.clientWidth || canvasElement.height !== canvasElement.clientHeight) {
+                canvasElement.width = canvasElement.clientWidth;
+                canvasElement.height = canvasElement.clientHeight;
+            }
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let currentFrameGesture = -1;
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                const handedness = results.multiHandedness[0].label;
+
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00cec9', lineWidth: 4});
+                drawLandmarks(canvasCtx, landmarks, {color: '#ff7675', lineWidth: 1, radius: 3});
+
+                let count = 0;
+
+                if (handedness === 'Left') {
+                    if (landmarks[4].x > landmarks[3].x) count++;
+                } else {
+                    if (landmarks[4].x < landmarks[3].x) count++;
+                }
+                if (landmarks[8].y < landmarks[6].y) count++;
+                if (landmarks[12].y < landmarks[10].y) count++;
+                if (landmarks[16].y < landmarks[14].y) count++;
+                if (landmarks[20].y < landmarks[18].y) count++;
+
+                currentFrameGesture = count;
+            }
+
+            if (currentFrameGesture === 0) {
+                currentGestureText.innerText = "0 (กำมือ)";
+            } else if (currentFrameGesture > 0) {
+                currentGestureText.innerText = currentFrameGesture + " นิ้ว";
+            } else {
+                currentGestureText.innerText = "รอชูนิ้วหน้ากล้อง...";
+            }
+
+            if (currentFrameGesture !== -1 && !isCooldown) {
+                if (currentFrameGesture === stableGesture) {
+                    gestureCounter++;
+                    if (gestureCounter >= REQUIRED_FRAMES) {
+                        processGestureLogic(stableGesture);
+                        gestureCounter = 0;
+                    }
+                } else {
+                    stableGesture = currentFrameGesture;
+                    gestureCounter = 0;
+                }
+            } else {
+                gestureCounter = 0;
+            }
+
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.7
+        });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+
+        camera.start()
+            .then(() => {
+                updateUI(); 
+            })
+            .catch((err) => {
+                statusMessage.innerText = "❌ กล้องขัดข้อง";
+                mainText.innerHTML = `
+                    <h2>ไม่สามารถเปิดใช้งานระบบกล้องถ่ายภาพได้</h2>
+                    <p style="color:red; font-weight:bold;">กรุณาคลิกปุ่ม "อนุญาตให้ใช้กล้อง" (Allow Camera) ด้านบนของหน้าต่างเว็บเบราว์เซอร์ เพื่อเข้าสู่แบบสอบถาม</p>
+                `;
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
