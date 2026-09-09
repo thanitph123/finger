@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบสำรวจ “วันนี้คุณดูแลสมองดีแค่ไหน?”</title>
+    
+    <!-- นำเข้า MediaPipe Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --accent-color: #FF7E5F;
+            --bg-color: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-color: #2C3E50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Responsive Layout */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+
+        /* ส่วนกล้อง */
+        .camera-section {
+            flex: 1;
+            position: relative;
+            background-color: #050505;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 40vh;
+        }
+
+        @media (min-width: 768px) {
+            .camera-section {
+                flex: 1;
+                height: 100vh;
+            }
+        }
+
+        video {
+            display: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* ส่องกระจก */
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* ส่วนเนื้อหาคำถาม */
+        .content-section {
+            flex: 1.2;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: var(--bg-color);
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            animation: fadeIn 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 460px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            color: var(--primary-color);
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .instructions {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 15px;
+            background: #EBF3FA;
+            padding: 15px;
+            border-left: 5px solid var(--primary-color);
+            border-radius: 8px;
+        }
+
+        /* กล่องทดสอบชูนิ้ว (หน้าทดสอบกล้อง) */
+        .finger-test-box {
+            background: #F0F7FF;
+            border: 2px solid var(--primary-color);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .finger-test-title {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .finger-test-number {
+            font-size: 4.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .finger-test-status {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2C3E50;
+        }
+
+        .question-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1A252C;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        /* ตกแต่งตัวเลือกให้คลิกได้และมีเอฟเฟกต์สวยงาม */
+        .option-item {
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #FAFAFA;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .option-item:hover {
+            background: #EBF3FA;
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .option-item:active {
+            transform: translateX(2px);
+        }
+
+        /* กล่องแสดงการยืนยันคำตอบ (เมื่อชูนิ้วตอบหรือคลิกตอบ) */
+        .confirmation-box {
+            text-align: center;
+            background: #FFFDE7;
+            border: 2px dashed #FBC02D;
+            padding: 35px 20px;
+            border-radius: 20px;
+            margin: auto 0;
+        }
+
+        .confirm-text {
+            font-size: 1.7rem;
+            font-weight: bold;
+            color: #2C3E50;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .confirm-highlight {
+            color: #D35400;
+            font-size: 2.1rem;
+            text-decoration: underline;
+        }
+
+        .action-hint {
+            font-size: 1.05rem;
+            color: #444;
+            margin-top: 15px;
+            line-height: 1.8;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        /* ปุ่มกดด้านล่าง */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            background-color: #357ABD;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background-color: #7F8C8D;
+        }
+
+        .btn-secondary:hover {
+            background-color: #626D6E;
+        }
+
+        .btn-restart {
+            background-color: var(--accent-color);
+        }
+
+        .btn-restart:hover {
+            background-color: #E05638;
+        }
+
+        .score-box {
+            text-align: center;
+            padding: 15px;
+        }
+
+        .score-number {
+            font-size: 3.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .score-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2D3748;
+            margin: 15px 0;
+        }
+
+        .score-desc {
+            font-size: 1.05rem;
+            color: #4A5568;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. ส่วนแสดงภาพจากกล้อง -->
+        <div class="camera-section">
+            <div class="camera-status" id="cameraStatus">กำลังเชื่อมต่อกล้อง...</div>
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas"></canvas>
+        </div>
+
+        <!-- 2. ส่วนแสดงคำถามและเนื้อหา -->
+        <div class="content-section">
+            <div class="card" id="mainCard">
+                <!-- โหลดเนื้อหาโดย JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // -------------------------------------------------------------
+        // ข้อมูลแบบสำรวจ 5 ข้อ
+        // -------------------------------------------------------------
+        const questions = [
+            "1. ฉันรับประทานอาหารเช้าหรือมื้อแรกที่มีประโยชน์ เพื่อเติมพลังให้ร่างกายและสมอง",
+            "2. ฉันทำกิจกรรมที่ช่วยกระตุ้นสมอง เช่น อ่านหนังสือ เล่นเกมฝึกความคิด เล่นดนตรี ทำงานอดิเรก หรือเรียนรู้สิ่งใหม่",
+            "3. ฉันดูแลการพักผ่อนและจัดการความเครียดของตัวเอง เพื่อไม่ปล่อยให้สมองเหนื่อยล้าสะสม",
+            "4. ฉันเคลื่อนไหวร่างกายหรือออกกำลังกายอย่างสม่ำเสมอ เช่น เดิน วิ่ง ว่ายน้ำ หรือเต้นแอโรบิก",
+            "5. เมื่อรู้สึกว่าสมองตื้อ หลงลืมง่าย หรือมีสมาธิลดลง ฉันจะหยุดพัก สังเกตอาการ และขอคำแนะนำจากแพทย์หากอาการเกิดขึ้นต่อเนื่อง"
+        ];
+
+        const options = [
+            { id: 1, text: "ไม่เคยเลย", score: 1 },
+            { id: 2, text: "นาน ๆ ครั้ง", score: 2 },
+            { id: 3, text: "บางครั้ง", score: 3 },
+            { id: 4, text: "บ่อยครั้ง", score: 4 },
+            { id: 5, text: "เป็นประจำ", score: 5 }
+        ];
+
+        // สถานะระบบ
+        let currentStep = 'TEST'; // 'TEST', 'QUIZ', 'RESULT'
+        let currentQIndex = 0;
+        let answers = [null, null, null, null, null]; // null = ยังไม่ได้เลือกคำตอบ
+        let lastGestureTime = 0;
+        const GESTURE_COOLDOWN = 2500; // เวลาหน่วงป้องกันเปลี่ยนข้อไวเกินไป (2.5 วินาที)
+
+        const mainCard = document.getElementById('mainCard');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+
+        // -------------------------------------------------------------
+        // 1. เปิดใช้งานกล้อง
+        // -------------------------------------------------------------
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720, facingMode: "user" } 
+                });
+                videoElement.srcObject = stream;
+                cameraStatus.innerText = "🟡 กล้องพร้อมใช้งาน";
+                cameraStatus.style.background = "rgba(46, 204, 113, 0.85)";
+            } catch (err) {
+                cameraStatus.innerText = "⚠️ ไม่พบกล้อง กรุณาอนุญาตเปิดกล้อง";
+                cameraStatus.style.background = "rgba(231, 76, 60, 0.85)";
+                alert("โปรดอนุญาตให้เปิดกล้องถ่ายรูปเพื่อเริ่มใช้งาน");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 2. แสดงผล UI บนหน้าจอ
+        // -------------------------------------------------------------
+        function renderUI() {
+            // หน้าทดสอบกล้องและการชูนิ้วมือ
+            if (currentStep === 'TEST') {
+                mainCard.innerHTML = `
+                    <div>
+                        <h1 class="title">📷 ทดสอบกล้องและการชูนิ้วมือ</h1>
+                        <div class="instructions">
+                            ลองกำมือหรือชูนิ้วมือ 1-5 นิ้ว หน้ากล้อง เพื่อทดสอบการตรวจจับของระบบครับ
+                        </div>
+                        
+                        <div class="finger-test-box">
+                            <div class="finger-test-title">จำนวนนิ้วที่ระบบตรวจจับได้</div>
+                            <div class="finger-test-number" id="testFingerNum">0</div>
+                            <div class="finger-test-status" id="testFingerStatus">✊ กำมือ (0)</div>
+                        </div>
+
+                        <div class="instructions" style="text-align:center; background:#EBF3FA; border-left-color:#3498DB;">
+                            👉 เมื่อระบบทำงานถูกต้องและพร้อมแล้ว<br>
+                            <strong>เอานิ้วจิ้มแก้ม 2 ข้าง หรือคลิกปุ่มด้านล่าง</strong> เพื่อเริ่มข้อที่ 1
+                        </div>
+                    </div>
+                    <button class="btn" style="width:100%;" onclick="startSurvey()">เริ่มทำแบบสำรวจ (ข้อที่ 1)</button>
+                `;
+            } 
+            // หน้าแบบสำรวจ (QUIZ)
+            else if (currentStep === 'QUIZ') {
+                const qText = questions[currentQIndex];
+                const currentAns = answers[currentQIndex];
+
+                // กรณีที่ 1: ยังไม่ได้เลือกตอบ -> แสดงโจทย์ และตัวเลือก 1-5 (คลิกได้ / ชูนิ้วได้)
+                if (currentAns === null) {
+                    mainCard.innerHTML = `
+                        <div>
+                            <div style="font-size:0.9rem; color:#888; margin-bottom:8px;">ข้อที่ ${currentQIndex + 1} จาก 5</div>
+                            <h2 class="question-title">${qText}</h2>
+                            <ul class="options-list">
+                                ${options.map(opt => `
+                                    <li class="option-item" onclick="selectOption(${opt.id})">
+                                        <span><strong>${opt.id}.</strong> ${opt.text}</span>
+                                        <span style="color:#7F8C8D; font-size:0.9rem;">(${opt.score} คะแนน)</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="prevQuestion()">⬅️ กลับข้อเดิม</button>
+                            <button class="btn" onclick="nextQuestion()">ข้อถัดไป ➡️</button>
+                        </div>
+                    `;
+                } 
+                // กรณีที่ 2: เลือกคำตอบแล้ว -> แสดงหน้ายืนยัน
+                else {
+                    const selectedOpt = options.find(o => o.id === currentAns);
+                    const optText = selectedOpt ? selectedOpt.text : "";
+
+                    mainCard.innerHTML = `
+                        <div>
+                            <div style="font-size:0.9rem; color:#888; margin-bottom:8px;">ข้อที่ ${currentQIndex + 1} จาก 5</div>
+                        </div>
+
+                        <div class="confirmation-box">
+                            <div class="confirm-text">
+                                คุณตอบ <span class="confirm-highlight">${currentAns} ${optText}</span> ใช่หรือไม่
+                            </div>
+                            <div class="action-hint">
+                                ✊ <strong>กำมือ (0 นิ้ว)</strong> = ยืนยันไปข้อถัดไป<br>
+                                🖐️ <strong>ชู 5 นิ้ว</strong> = กลับไปคำถามเดิม
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="prevQuestion()">⬅️ กลับข้อเดิม</button>
+                            <button class="btn" onclick="nextQuestion()">ข้อถัดไป ➡️</button>
+                        </div>
+                    `;
+                }
+            } 
+            // หน้าสรุปผลคะแนน (RESULT)
+            else if (currentStep === 'RESULT') {
+                const totalScore = answers.reduce((a, b) => a + (b || 0), 0);
+                let resultTitle = "";
+                let resultDesc = "";
+
+                if (totalScore >= 21) {
+                    resultTitle = "“สมองสดใส ใส่ใจดีมาก”";
+                    resultDesc = "คุณมีพฤติกรรมดูแลสุขภาพสมองที่ดี รักษาความสม่ำเสมอนี้ไว้เลยค่ะ";
+                } else if (totalScore >= 16) {
+                    resultTitle = "“ดูแลดีแล้ว เติมอีกนิดยิ่งดี”";
+                    resultDesc = "โดยรวมถือว่าดี ลองดูว่าข้อไหนได้คะแนนน้อย แล้วเลือกปรับเพิ่มเพียงหนึ่งเรื่องก่อน";
+                } else if (totalScore >= 11) {
+                    resultTitle = "“สมองกำลังรอการเติมพลัง”";
+                    resultDesc = "เริ่มจากเรื่องง่าย ๆ เช่น นอนให้พอ ขยับร่างกาย หรือทำกิจกรรมที่ชอบวันละเล็กน้อย";
+                } else {
+                    resultTitle = "“ถึงเวลาหันมาดูแลสมองกันแล้ว”";
+                    resultDesc = "ไม่จำเป็นต้องเปลี่ยนทุกอย่างพร้อมกัน เลือกเริ่มจากหนึ่งพฤติกรรมที่ทำได้จริง แล้วค่อย ๆ เพิ่มทีละก้าว";
+                }
+
+                mainCard.innerHTML = `
+                    <div class="score-box">
+                        <h2>ผลการประเมินของคุณ</h2>
+                        <div class="score-number">${totalScore} / 25 คะแนน</div>
+                        <div class="score-title">${resultTitle}</div>
+                        <p class="score-desc">${resultDesc}</p>
+                    </div>
+                    <div class="instructions" style="text-align:center; margin-top:15px;">
+                        ขอบคุณมากที่ทำแบบสำรวจ<br>👉 <strong>เอานิ้วจิ้มแก้ม 2 ข้าง หรือกดปุ่มด้านล่างเพื่อเริ่มทำใหม่อีกครั้ง</strong>
+                    </div>
+                    <button class="btn btn-restart" style="width:100%;" onclick="restartSurvey()">เริ่มทำใหม่อีกครั้ง</button>
+                `;
+            }
+        }
+
+        // -------------------------------------------------------------
+        // ฟังก์ชันการทำงานของปุ่ม เมาส์ และการเปลี่ยนข้อ
+        // -------------------------------------------------------------
+        function selectOption(optId) {
+            if (currentStep !== 'QUIZ') return;
+            answers[currentQIndex] = optId;
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN; // หน่วงล็อก gesture ชั่วคราว
+            renderUI();
+        }
+
+        function startSurvey() {
+            currentStep = 'QUIZ';
+            currentQIndex = 0;
+            answers = [null, null, null, null, null];
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+            renderUI();
+        }
+
+        function nextQuestion() {
+            if (currentStep !== 'QUIZ') return;
+
+            // หากยังไม่ได้เลือกคำตอบ จะไม่ยอมให้เลื่อนไปข้อถัดไป
+            if (answers[currentQIndex] === null) {
+                alert("กรุณาชู 1 - 5 นิ้ว หรือใช้เมาส์คลิกเพื่อเลือกคำตอบก่อนนะครับ");
+                return;
+            }
+
+            if (currentQIndex < questions.length - 1) {
+                currentQIndex++;
+                answers[currentQIndex] = null; // เริ่มข้อใหม่ด้วยการให้เลือกคำตอบใหม่
+                lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+                renderUI();
+            } else {
+                currentStep = 'RESULT'; // ทำครบ 5 ข้อ แสดงหน้าสรุปผล
+                lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+                renderUI();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentStep !== 'QUIZ') return;
+
+            // หากอยู่ในหน้ายืนยันคำตอบ แล้วกด "กลับข้อเดิม" -> ให้กลับไปแสดงตัวเลือกคำถามข้อเดิม
+            if (answers[currentQIndex] !== null) {
+                answers[currentQIndex] = null;
+                lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+                renderUI();
+                return;
+            }
+
+            // หากยังไม่ได้เลือกคำตอบ แล้วกด "กลับข้อเดิม" -> ให้ย้อนกลับไปข้อก่อนหน้า
+            if (currentQIndex > 0) {
+                currentQIndex--;
+                answers[currentQIndex] = null;
+                lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+                renderUI();
+            } else {
+                currentStep = 'TEST'; // ถ้าย้อนกลับสุด ให้กลับไปหน้าทดสอบกล้อง
+                lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+                renderUI();
+            }
+        }
+
+        function restartSurvey() {
+            currentStep = 'TEST';
+            currentQIndex = 0;
+            answers = [null, null, null, null, null];
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+            renderUI();
+        }
+
+        // -------------------------------------------------------------
+        // วาดเส้นดิจิทัลสีเหลืองขนาดเล็ก (2px)
+        // -------------------------------------------------------------
+        function drawYellowDigitalSkeleton(ctx, landmarks, w, h) {
+            const connections = [
+                [0, 1], [1, 2], [2, 3], [3, 4],       // นิ้วโป้ง
+                [0, 5], [5, 6], [6, 7], [7, 8],       // นิ้วชี้
+                [5, 9], [9, 10], [10, 11], [11, 12],   // นิ้วกลาง
+                [9, 13], [13, 14], [14, 15], [15, 16], // นิ้วนาง
+                [13, 17], [0, 17], [17, 18], [18, 19], [19, 20] // นิ้วก้อย
+            ];
+
+            ctx.save();
+            ctx.strokeStyle = '#FFFF00'; // สีเหลือง
+            ctx.lineWidth = 2;           // ขนาดเส้นเล็กบาง 2px
+            ctx.shadowColor = '#FFFF00';
+            ctx.shadowBlur = 4;
+
+            for (const [i, j] of connections) {
+                ctx.beginPath();
+                ctx.moveTo(landmarks[i].x * w, landmarks[i].y * h);
+                ctx.lineTo(landmarks[j].x * w, landmarks[j].y * h);
+                ctx.stroke();
+            }
+
+            ctx.shadowBlur = 0;
+            for (const pt of landmarks) {
+                ctx.beginPath();
+                ctx.arc(pt.x * w, pt.y * h, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = '#FFEE55';
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#000000';
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // -------------------------------------------------------------
+        // นับจำนวนนิ้วมืออย่างแม่นยำ
+        // -------------------------------------------------------------
+        function countExtendedFingers(landmarks) {
+            let count = 0;
+
+            // ตรวจสอบ 4 นิ้วหลัก: ชี้ (8), กลาง (12), นาง (16), ก้อย (20)
+            const isIndexUp  = (landmarks[8].y  < landmarks[6].y  && landmarks[8].y  < landmarks[5].y);
+            const isMiddleUp = (landmarks[12].y < landmarks[10].y && landmarks[12].y < landmarks[9].y);
+            const isRingUp   = (landmarks[16].y < landmarks[14].y && landmarks[16].y < landmarks[13].y);
+            const isPinkyUp  = (landmarks[20].y < landmarks[18].y && landmarks[20].y < landmarks[17].y);
+
+            if (isIndexUp)  count++;
+            if (isMiddleUp) count++;
+            if (isRingUp)   count++;
+            if (isPinkyUp)  count++;
+
+            // ตรวจสอบนิ้วโป้ง (4)
+            const dThumbTipPinky = Math.hypot(landmarks[4].x - landmarks[17].x, landmarks[4].y - landmarks[17].y);
+            const dThumbIpPinky  = Math.hypot(landmarks[3].x - landmarks[17].x, landmarks[3].y - landmarks[17].y);
+
+            let isThumbUp = false;
+            if (count === 4) {
+                isThumbUp = dThumbTipPinky > dThumbIpPinky * 1.05;
+            } else {
+                isThumbUp = dThumbTipPinky > dThumbIpPinky * 1.20;
+            }
+
+            if (isThumbUp) count++;
+
+            return count;
+        }
+
+        // -------------------------------------------------------------
+        // ตรวจจับท่าทาง "เอานิ้วจิ้มแก้ม 2 ข้าง"
+        // -------------------------------------------------------------
+        function checkPokingCheeks(handsLandmarks) {
+            if (handsLandmarks.length < 2) return false;
+
+            let pointingHands = 0;
+            for (let hand of handsLandmarks) {
+                let indexExtended = hand[8].y < hand[6].y;
+                let middleFolded = hand[12].y > hand[10].y;
+                if (indexExtended && middleFolded) pointingHands++;
+            }
+
+            if (pointingHands >= 2) {
+                let y1 = handsLandmarks[0][8].y;
+                let y2 = handsLandmarks[1][8].y;
+                if (y1 > 0.15 && y1 < 0.65 && y2 > 0.15 && y2 < 0.65) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // -------------------------------------------------------------
+        // ระบบประมวลผลวิดีโอหลัก (MediaPipe Hand Loop)
+        // -------------------------------------------------------------
+        function onResults(results) {
+            const w = videoElement.videoWidth || 640;
+            const h = videoElement.videoHeight || 480;
+
+            if (canvasElement.width !== w || canvasElement.height !== h) {
+                canvasElement.width = w;
+                canvasElement.height = h;
+            }
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, w, h);
+            canvasCtx.drawImage(results.image, 0, 0, w, h);
+
+            const now = Date.now();
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                
+                // วาดเส้นวิเคราะห์สีเหลือง
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawYellowDigitalSkeleton(canvasCtx, landmarks, w, h);
+                }
+
+                // 1. หน้าทดสอบกล้อง (TEST) -> อัปเดตตัวเลขจำนวนนิ้วบนหน้าจอทันที
+                if (currentStep === 'TEST') {
+                    const firstHand = results.multiHandLandmarks[0];
+                    const count = countExtendedFingers(firstHand);
+                    
+                    const testNumElem = document.getElementById('testFingerNum');
+                    const testStatusElem = document.getElementById('testFingerStatus');
+                    
+                    if (testNumElem) testNumElem.innerText = count;
+                    if (testStatusElem) {
+                        const statusMap = {
+                            0: "✊ กำมือ (0)",
+                            1: "☝️ ชูนิ้ว 1",
+                            2: "✌️ ชูนิ้ว 2",
+                            3: "🤟 ชูนิ้ว 3",
+                            4: "🖖 ชูนิ้ว 4",
+                            5: "🖐️ ชูนิ้ว 5"
+                        };
+                        testStatusElem.innerText = statusMap[count] || `ชูนิ้ว ${count}`;
+                    }
+
+                    // นิ้วจิ้มแก้ม 2 ข้าง เพื่อเริ่มทำข้อที่ 1
+                    if (now > lastGestureTime && checkPokingCheeks(results.multiHandLandmarks)) {
+                        startSurvey();
+                    }
+                }
+                // 2. หน้าคำถาม (QUIZ)
+                else if (currentStep === 'QUIZ') {
+                    if (now > lastGestureTime) {
+                        let firstHand = results.multiHandLandmarks[0];
+                        let fingers = countExtendedFingers(firstHand);
+
+                        // สถานะ A: ยังไม่ได้ตอบคำถาม (หน้าแสดงโจทย์ + ตัวเลือก 1-5)
+                        if (answers[currentQIndex] === null) {
+                            if (fingers >= 1 && fingers <= 5) {
+                                selectOption(fingers); // ใช้ฟังก์ชันเดียวกับคลิกเมาส์
+                            }
+                        } 
+                        // สถานะ B: ตอบแล้ว (หน้าแสดงยืนยัน "คุณตอบ X ... ใช่หรือไม่")
+                        else {
+                            // กำมือ (0 นิ้ว) = ยืนยันคำตอบ แล้วไปข้อถัดไป
+                            if (fingers === 0) {
+                                nextQuestion();
+                            } 
+                            // ชู 5 นิ้ว = ยกเลิกคำตอบ กลับไปแสดงคำถามเดิม
+                            else if (fingers === 5) {
+                                answers[currentQIndex] = null;
+                                lastGestureTime = now + GESTURE_COOLDOWN;
+                                renderUI();
+                            }
+                        }
+                    }
+                } 
+                // 3. หน้าสรุปผล (RESULT) -> นิ้วจิ้มแก้ม 2 ข้าง เพื่อเริ่มทำใหม่อีกครั้ง
+                else if (currentStep === 'RESULT') {
+                    if (now > lastGestureTime && checkPokingCheeks(results.multiHandLandmarks)) {
+                        restartSurvey();
+                    }
+                }
+            } else {
+                // หากไม่มีมือในกล้อง ในหน้า TEST ให้แสดงเป็นกำมือ (0)
+                if (currentStep === 'TEST') {
+                    const testNumElem = document.getElementById('testFingerNum');
+                    const testStatusElem = document.getElementById('testFingerStatus');
+                    if (testNumElem) testNumElem.innerText = "0";
+                    if (testStatusElem) testStatusElem.innerText = "✊ กำมือ (0) / ไม่พบมือ";
+                }
+            }
+
+            canvasCtx.restore();
+        }
+
+        // -------------------------------------------------------------
+        // เริ่มต้นใช้งาน MediaPipe Hands
+        // -------------------------------------------------------------
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                try {
+                    await hands.send({ image: videoElement });
+                } catch (e) {
+                    console.error("Frame processing error:", e);
+                }
+            },
+            width: 640,
+            height: 480
+        });
+
+        window.onload = () => {
+            initCamera();
+            camera.start();
+            renderUI();
+        };
+    </script>
+</body>
+</html>
