@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบสำรวจ “วันนี้คุณดูแลสมองดีแค่ไหน?”</title>
+    <!-- นำเข้า MediaPipe Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --accent-color: #FF7E5F;
+            --bg-color: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-color: #2C3E50;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+
+        .camera-section {
+            flex: 1;
+            position: relative;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 40vh;
+        }
+
+        @media (min-width: 768px) {
+            .camera-section {
+                flex: 1.2;
+                min-height: 100vh;
+            }
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        video {
+            display: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .content-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card-header {
+            border-bottom: 2px solid #EBF1F6;
+            padding-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .card-subtitle {
+            font-size: 0.95rem;
+            color: #7F8C8D;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #EBF3FA;
+            color: var(--primary-color);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            line-height: 1.5;
+            color: #34495E;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .option-item {
+            padding: 14px 20px;
+            border: 2px solid #E2E8F0;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #FAFAFA;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .option-item:hover {
+            background: #EBF3FA;
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .finger-tag {
+            background: #E2E8F0;
+            color: #4A5568;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .confirm-box {
+            text-align: center;
+            padding: 20px;
+            background: #F8FAFC;
+            border-radius: 16px;
+            border: 2px dashed #CBD5E1;
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #357ABD;
+        }
+
+        .btn-secondary {
+            background: #94A3B8;
+        }
+
+        .btn-secondary:hover {
+            background: #64748B;
+        }
+
+        .gesture-guide {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #FFFBEB;
+            border: 1px solid #FDE68A;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #92400E;
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+        }
+
+        .result-score {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 10px 0;
+            color: var(--primary-color);
+        }
+
+        .result-excellent { background: #ECFDF5; border: 2px solid #A7F3D0; color: #065F46; }
+        .result-good { background: #EFF6FF; border: 2px solid #BFDBFE; color: #1E40AF; }
+        .result-warning { background: #FFFBEB; border: 2px solid #FDE68A; color: #92400E; }
+
+        .big-finger-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- ฝั่งซ้าย: กล้อง Webcam & Canvas -->
+        <div class="camera-section">
+            <div class="camera-status" id="cameraStatus">กำลังเชื่อมต่อกล้อง...</div>
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="output_canvas"></canvas>
+        </div>
+
+        <!-- ฝั่งขวา: ส่วนแสดงผลแบบสำรวจ -->
+        <div class="content-section">
+            <div class="card" id="mainCard">
+                <!-- เนื้อหาจะอัปเดตแบบ Dynamic ผ่าน JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. ข้อมูลคำถาม และ 4 ตัวเลือก (1-4 คะแนน) ---
+        const questions = [
+            "1. คุณนอนหลับพักผ่อนอย่างน้อย 7-8 ชั่วโมงต่อวัน เป็นประจำหรือไม่?",
+            "2. คุณออกกำลังกายหรือเคลื่อนไหวร่างกายอย่างน้อย 150 นาทีต่อสัปดาห์หรือไม่?",
+            "3. คุณทำกิจกรรมกระตุ้นความคิด เช่น อ่านหนังสือ เล่นเกมปริศนา หรือเรียนรู้สิ่งใหม่ๆ หรือไม่?",
+            "4. คุณรับประทานอาหารครบ 5 หมู่ และเน้นผัก ผลไม้ ปลา หรือถั่วอัลมอนด์ หรือไม่?",
+            "5. คุณมีการทำสมาธิ หรือผ่อนคลายความเครียดสะสมระหว่างวันหรือไม่?"
+        ];
+
+        const options = [
+            { id: 1, text: "1. ไม่เคยเลย", score: 1 },
+            { id: 2, text: "2. นานๆ ครั้ง", score: 2 },
+            { id: 3, text: "3. บ่อยๆ", score: 3 },
+            { id: 4, text: "4. เป็นประจำ", score: 4 }
+        ];
+
+        // --- 2. ตัวแปรจัดการสถานะระบบ ---
+        let currentStep = 'TEST'; // สถานะ: 'TEST', 'QUIZ', 'RESULT'
+        let currentQIndex = 0;
+        let answers = [null, null, null, null, null];
+        let detectedFingersNow = 0;
+        let lastGestureTime = 0;
+        const GESTURE_COOLDOWN = 2500; // หน่วงเวลา 2.5 วินาที
+
+        // DOM Elements
+        const webcamElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const mainCard = document.getElementById('mainCard');
+
+        // --- 3. ฟังก์ชันแสดงผลหน้าจอ (UI Renderer) ---
+        function renderUI() {
+            if (currentStep === 'TEST') {
+                mainCard.innerHTML = `
+                    <div class="card-header">
+                        <span class="badge">ขั้นตอนที่ 1 / 3</span>
+                        <div class="card-title">ทดสอบกล้องและการตรวจจับมือ</div>
+                        <div class="card-subtitle">ทดลองชูนิ้วมือ (0-5 นิ้ว) เพื่อดูการตอบสนองของระบบ</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <p style="color:#64748B;">จำนวนนิ้วที่ระบบตรวจจับได้ในขณะนี้:</p>
+                        <div class="big-finger-display" id="testFingerDisplay">${detectedFingersNow}</div>
+                    </div>
+                    <div class="gesture-guide">
+                        <span style="font-size:1.5rem;">👉</span>
+                        <div><strong>วิธีเริ่มทำแบบสำรวจ:</strong><br>ทำท่า <u>"เอานิ้วชี้จิ้มแก้ม 2 ข้าง"</u> พร้อมกัน หรือคลิกปุ่มด้านล่าง</div>
+                    </div>
+                    <button class="btn" onclick="startSurvey()">เริ่มทำแบบสำรวจ (ข้อที่ 1) 🚀</button>
+                `;
+            } else if (currentStep === 'QUIZ') {
+                const qText = questions[currentQIndex];
+                const currentAns = answers[currentQIndex];
+
+                if (currentAns === null) {
+                    let optionsHTML = options.map(opt => `
+                        <div class="option-item" onclick="selectOption(${opt.id})">
+                            <span>${opt.text}</span>
+                            <span class="finger-tag">ชู ${opt.id} นิ้ว</span>
+                        </div>
+                    `).join('');
+
+                    mainCard.innerHTML = `
+                        <div class="card-header">
+                            <span class="badge">คำถามข้อที่ ${currentQIndex + 1} / 5</span>
+                            <div class="card-title">ประเมินการดูแลสมอง</div>
+                        </div>
+                        <div class="question-text">${qText}</div>
+                        <div class="options-list">
+                            ${optionsHTML}
+                        </div>
+                        <div class="gesture-guide">
+                            <span>💡</span>
+                            <div><strong>วิธีตอบ:</strong> ชูนิ้ว 1 - 4 นิ้ว หน้ากล้อง หรือคลิกตัวเลือกด้านบน</div>
+                        </div>
+                    `;
+                } else {
+                    const selectedOpt = options.find(o => o.id === currentAns);
+                    mainCard.innerHTML = `
+                        <div class="card-header">
+                            <span class="badge">ข้อที่ ${currentQIndex + 1} / 5 - ยืนยันคำตอบ</span>
+                            <div class="card-title">คุณเลือก: "${selectedOpt ? selectedOpt.text : ''}"</div>
+                        </div>
+                        <div class="confirm-box">
+                            <p style="font-size:1.1rem; margin-bottom:15px; color:#334155;">ต้องการยืนยันคำตอบนี้เพื่อไปยังข้อถัดไปหรือไม่?</p>
+                            <div style="display:flex; flex-direction:column; gap:10px;">
+                                <div style="background:#E0F2FE; padding:10px; border-radius:10px; color:#0369A1; font-weight:600;">
+                                    ✊ กำมือ (0 นิ้ว) = ยืนยันคำตอบ
+                                </div>
+                                <div style="background:#FEE2E2; padding:10px; border-radius:10px; color:#B91C1C; font-weight:600;">
+                                    🖐️ ชู 5 นิ้ว = ยกเลิก / เลือกใหม่
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-secondary" onclick="cancelAnswer()">⬅️ เลือกใหม่ (ชู 5 นิ้ว)</button>
+                            <button class="btn" onclick="nextQuestion()">ยืนยัน (กำมือ) ➡️</button>
+                        </div>
+                    `;
+                }
+            } else if (currentStep === 'RESULT') {
+                const totalScore = answers.reduce((sum, optId) => {
+                    const opt = options.find(o => o.id === optId);
+                    return sum + (opt ? opt.score : 0);
+                }, 0);
+
+                let resultTitle = "";
+                let resultDesc = "";
+                let resultClass = "";
+
+                // เกณฑ์ใหม่: >= 17 และ >= 14 คะแนน (คะแนนเต็ม 20)
+                if (totalScore >= 17) {
+                    resultTitle = "🌟 สมองได้รับการดูแลดีเยี่ยม!";
+                    resultDesc = "คุณมีพฤติกรรมส่งเสริมสุขภาพสมองอย่างสม่ำเสมอ รักษาวินัยนี้ไว้เพื่อป้องกันภาวะสมองเสื่อมในระยะยาว";
+                    resultClass = "result-excellent";
+                } else if (totalScore >= 14) {
+                    resultTitle = "👍 สมองได้รับการดูแลระดับปานกลาง";
+                    resultDesc = "คุณดูแลสมองได้ดีในระดับหนึ่ง แต่ยังสามารถปรับเพิ่มกิจกรรมกระตุ้นสมอง และการนอนหลับให้มีคุณภาพยิ่งขึ้นได้";
+                    resultClass = "result-good";
+                } else {
+                    resultTitle = "⚠️ ควรเร่งปรับปรุงการดูแลสมอง";
+                    resultDesc = "สมองของคุณอาจกำลังเผชิญความเครียดหรือขาดการกระตุ้นที่เพียงพอ ควรเริ่มออกกำลังกาย พักผ่อน และรับประทานอาหารบำรุงสมอง";
+                    resultClass = "result-warning";
+                }
+
+                mainCard.innerHTML = `
+                    <div class="card-header" style="text-align:center;">
+                        <span class="badge">สรุปผลการประเมิน</span>
+                        <div class="card-title">ผลการดูแลสุขภาพสมองของคุณ</div>
+                    </div>
+                    <div class="result-box ${resultClass}">
+                        <h3>${resultTitle}</h3>
+                        <div class="result-score">${totalScore} <span style="font-size:1.2rem; font-weight:normal;">/ 20</span></div>
+                        <p style="font-size:1rem; line-height:1.5;">${resultDesc}</p>
+                    </div>
+                    <div class="gesture-guide">
+                        <span>🔄</span>
+                        <div><strong>ทำแบบสำรวจใหม่:</strong> เอานิ้วจิ้มแก้ม 2 ข้าง หรือกดปุ่มด้านล่าง</div>
+                    </div>
+                    <button class="btn" onclick="restartSurvey()">เริ่มต้นทำแบบสำรวจใหม่ 🔄</button>
+                `;
+            }
+        }
+
+        // --- 4. ฟังก์ชันการทำงานของปุ่มกดและ Action ---
+        function startSurvey() {
+            currentStep = 'QUIZ';
+            currentQIndex = 0;
+            answers = [null, null, null, null, null];
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+            renderUI();
+        }
+
+        function selectOption(optId) {
+            if (currentStep !== 'QUIZ') return;
+            if (optId >= 1 && optId <= 4) { // รับเฉพาะตัวเลือก 1-4
+                answers[currentQIndex] = optId;
+                lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+                renderUI();
+            }
+        }
+
+        function cancelAnswer() {
+            if (currentStep !== 'QUIZ') return;
+            answers[currentQIndex] = null;
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+            renderUI();
+        }
+
+        function nextQuestion() {
+            if (currentStep !== 'QUIZ') return;
+            if (answers[currentQIndex] === null) return;
+
+            if (currentQIndex < 4) {
+                currentQIndex++;
+            } else {
+                currentStep = 'RESULT';
+            }
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+            renderUI();
+        }
+
+        function restartSurvey() {
+            currentStep = 'TEST';
+            currentQIndex = 0;
+            answers = [null, null, null, null, null];
+            lastGestureTime = Date.now() + GESTURE_COOLDOWN;
+            renderUI();
+        }
+
+        // --- 5. อัลกอริทึม Computer Vision & Gesture Recognition ---
+
+        // วาดเส้นข้อต่อดิจิทัลสีเหลืองบน Canvas
+        function drawYellowDigitalSkeleton(ctx, landmarks, w, h) {
+            const connections = [
+                [0,1], [1,2], [2,3], [3,4],
+                [0,5], [5,6], [6,7], [7,8],
+                [5,9], [9,10], [10,11], [11,12],
+                [9,13], [13,14], [14,15], [15,16],
+                [13,17], [17,18], [18,19], [19,20], [0,17]
+            ];
+
+            ctx.strokeStyle = '#FFFF00';
+            ctx.lineWidth = 2;
+
+            for (const [i, j] of connections) {
+                ctx.beginPath();
+                ctx.moveTo(landmarks[i].x * w, landmarks[i].y * h);
+                ctx.lineTo(landmarks[j].x * w, landmarks[j].y * h);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i < landmarks.length; i++) {
+                ctx.beginPath();
+                ctx.arc(landmarks[i].x * w, landmarks[i].y * h, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = '#FFFF00';
+                ctx.fill();
+            }
+        }
+
+        // นับจำนวนนิ้วที่ชู (0 - 5 นิ้ว)
+        function countExtendedFingers(landmarks) {
+            let count = 0;
+
+            const isIndexUp  = (landmarks[8].y  < landmarks[6].y  && landmarks[8].y  < landmarks[5].y);
+            const isMiddleUp = (landmarks[12].y < landmarks[10].y && landmarks[12].y < landmarks[9].y);
+            const isRingUp   = (landmarks[16].y < landmarks[14].y && landmarks[16].y < landmarks[13].y);
+            const isPinkyUp  = (landmarks[20].y < landmarks[18].y && landmarks[20].y < landmarks[17].y);
+
+            if (isIndexUp)  count++;
+            if (isMiddleUp) count++;
+            if (isRingUp)   count++;
+            if (isPinkyUp)  count++;
+
+            const dThumbTipPinky = Math.hypot(landmarks[4].x - landmarks[17].x, landmarks[4].y - landmarks[17].y);
+            const dThumbIpPinky  = Math.hypot(landmarks[3].x - landmarks[17].x, landmarks[3].y - landmarks[17].y);
+            let isThumbUp = dThumbTipPinky > dThumbIpPinky * (count === 4 ? 1.05 : 1.20);
+
+            if (isThumbUp) count++;
+
+            return count;
+        }
+
+        // ตรวจจับท่าทาง "นิ้วชี้จิ้มแก้ม 2 ข้าง"
+        function checkPokingCheeks(handsLandmarks) {
+            if (handsLandmarks.length < 2) return false;
+
+            let pointingHands = 0;
+            for (let hand of handsLandmarks) {
+                let indexExtended = hand[8].y < hand[6].y;
+                let middleFolded = hand[12].y > hand[10].y;
+                if (indexExtended && middleFolded) pointingHands++;
+            }
+
+            if (pointingHands >= 2) {
+                let y1 = handsLandmarks[0][8].y;
+                let y2 = handsLandmarks[1][8].y;
+                if (y1 > 0.15 && y1 < 0.65 && y2 > 0.15 && y2 < 0.65) return true;
+            }
+            return false;
+        }
+
+        // --- 6. Loop ประมวลผลจาก MediaPipe Hands ---
+        function onResults(results) {
+            const w = canvasElement.width;
+            const h = canvasElement.height;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, w, h);
+            canvasCtx.drawImage(results.image, 0, 0, w, h);
+
+            let detectedFingers = 0;
+            const now = Date.now();
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawYellowDigitalSkeleton(canvasCtx, landmarks, w, h);
+                }
+
+                detectedFingers = countExtendedFingers(results.multiHandLandmarks[0]);
+                detectedFingersNow = detectedFingers;
+
+                // อัปเดตตัวเลขหน้าทดสอบ
+                const testFingerDisplay = document.getElementById('testFingerDisplay');
+                if (testFingerDisplay) {
+                    testFingerDisplay.innerText = detectedFingers;
+                }
+
+                // ประมวลผลการควบคุมโปรแกรมตาม Gesture
+                if (currentStep === 'TEST' || currentStep === 'RESULT') {
+                    if (now > lastGestureTime && checkPokingCheeks(results.multiHandLandmarks)) {
+                        if (currentStep === 'TEST') startSurvey();
+                        else if (currentStep === 'RESULT') restartSurvey();
+                    }
+                } else if (currentStep === 'QUIZ') {
+                    if (now > lastGestureTime) {
+                        if (answers[currentQIndex] === null) {
+                            if (detectedFingers >= 1 && detectedFingers <= 4) { // รับคำตอบ 1 - 4 นิ้ว
+                                selectOption(detectedFingers);
+                            }
+                        } else {
+                            if (detectedFingers === 0) {
+                                nextQuestion(); // กำมือ = ยืนยัน
+                            } else if (detectedFingers === 5) {
+                                cancelAnswer(); // ชู 5 = ยกเลิก
+                            }
+                        }
+                    }
+                }
+            } else {
+                detectedFingersNow = 0;
+                const testFingerDisplay = document.getElementById('testFingerDisplay');
+                if (testFingerDisplay) testFingerDisplay.innerText = "0";
+            }
+
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onResults);
+
+        // --- 7. การเริ่มต้นระบบกล้อง Webcam ---
+        async function initCamera() {
+            try {
+                const camera = new Camera(webcamElement, {
+                    onFrame: async () => {
+                        canvasElement.width = webcamElement.videoWidth || 1280;
+                        canvasElement.height = webcamElement.videoHeight || 720;
+                        await hands.send({ image: webcamElement });
+                    },
+                    width: 1280,
+                    height: 720
+                });
+                await camera.start();
+                cameraStatus.innerText = "🟢 กล้องพร้อมใช้งาน";
+                cameraStatus.style.background = "rgba(46, 204, 113, 0.85)";
+            } catch (err) {
+                console.error(err);
+                cameraStatus.innerText = "⚠️ ไม่พบกล้อง กรุณาอนุญาตเปิดกล้อง";
+                cameraStatus.style.background = "rgba(231, 76, 60, 0.85)";
+                alert("โปรดอนุญาตให้เปิดกล้องถ่ายรูปเพื่อเริ่มใช้งานระบบตรวจจับท่าทาง");
+            }
+        }
+
+        // โหลดระบบเมื่อเปิดหน้าเว็บ
+        window.addEventListener('load', () => {
+            renderUI();
+            initCamera();
+        });
+    </script>
+</body>
+</html>
