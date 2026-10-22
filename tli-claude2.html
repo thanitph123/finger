@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ไทยประกันชีวิต · Dashboard สรุปข่าว</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1a2238;--mute:#6b7592;--line:#e4e8f2;--brand:#d6001c;--brand2:#7a0013;--good:#12a15f;--goodbg:#e3f6ec;--bad:#e5334b;--badbg:#fde8eb;--neu:#6b7592;--neubg:#eceff6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1424;--card:#181f35;--ink:#eef1fa;--mute:#98a2c0;--line:#283152;--goodbg:#10372a;--badbg:#431c26;--neubg:#252d49;--good:#3ddc97;--bad:#ff6b80;--neu:#aab3cf}}
+:root[data-theme="dark"]{--bg:#0f1424;--card:#181f35;--ink:#eef1fa;--mute:#98a2c0;--line:#283152;--goodbg:#10372a;--badbg:#431c26;--neubg:#252d49;--good:#3ddc97;--bad:#ff6b80;--neu:#aab3cf}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Prompt','Noto Sans Thai',system-ui,sans-serif;line-height:1.5}
+.hero{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;padding:28px 20px 70px}
+.wrap{max-width:1120px;margin:0 auto}
+.hero h1{margin:0;font-size:clamp(22px,4vw,32px);font-weight:700}.hero p{margin:4px 0 0;opacity:.85;font-size:14px}
+.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:10px;padding:9px 16px;font:500 14px 'Prompt',sans-serif;cursor:pointer;background:#fff;color:var(--brand);display:inline-flex;gap:6px;align-items:center}
+.btn.ghost{background:rgba(255,255,255,.18);color:#fff}.btn:hover{filter:brightness(.95)}
+main{margin-top:-48px;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 6px 24px rgba(20,30,60,.07)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.bar label{font-size:12px;color:var(--mute);display:block}
+input,select{font:14px 'Prompt',sans-serif;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:99px;padding:7px 14px;font:13px 'Prompt',sans-serif;cursor:pointer}
+.chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.grid{display:grid;gap:14px;margin-top:14px}.kpis{grid-template-columns:repeat(4,1fr)}.two{grid-template-columns:1fr 2fr}
+@media(max-width:800px){.kpis{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+.kpi small{color:var(--mute);font-size:13px}.kpi b{display:block;font-size:30px;font-weight:700;line-height:1.2}
+.kpi.g b{color:var(--good)}.kpi.b b{color:var(--bad)}.kpi.n b{color:var(--neu)}
+h3{margin:0 0 10px;font-size:15px}
+.donut{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.legend div{font-size:13px;margin:3px 0}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.trend{display:flex;align-items:flex-end;gap:4px;height:150px;overflow-x:auto;padding-top:6px}
+.col{flex:1;min-width:16px;display:flex;flex-direction:column;justify-content:flex-end;height:100%;align-items:center}
+.col i{display:block;width:100%;max-width:26px}.col span{font-size:10px;color:var(--mute);margin-top:4px;white-space:nowrap}
+.list{margin-top:14px;display:grid;gap:10px}
+.news{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px;border-left:5px solid var(--neu)}
+.news.good{border-left-color:var(--good)}.news.bad{border-left-color:var(--bad)}
+.news h4{margin:0;font-size:15px;font-weight:500}.news .meta{font-size:12px;color:var(--mute);margin-top:2px;word-break:break-all}
+.news a{color:var(--brand);text-decoration:none;font-size:13px;white-space:nowrap}
+.badge{border:0;border-radius:99px;padding:5px 12px;font:600 12px 'Prompt',sans-serif;cursor:pointer}
+.badge.good{background:var(--goodbg);color:var(--good)}.badge.bad{background:var(--badbg);color:var(--bad)}.badge.neu{background:var(--neubg);color:var(--neu)}
+@media(max-width:600px){.news{grid-template-columns:1fr}}
+.empty{text-align:center;color:var(--mute);padding:30px}
+.note{font-size:12px;color:var(--mute);margin-top:10px}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+ <div class="top">
+  <div><h1>🛡️ ไทยประกันชีวิต · Dashboard สรุปข่าว</h1><p id="sub">สรุปข่าวสารพร้อมวิเคราะห์ความรู้สึก ดี / ไม่ดี / ทั่วไป</p></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+   <button class="btn" id="up">⬆️ อัปโหลดข้อมูล</button>
+   <button class="btn ghost" id="tpl">⬇️ ตัวอย่างไฟล์ CSV</button>
+   <button class="btn ghost" id="demo">รีเซ็ตเป็นข้อมูลตัวอย่าง</button>
+   <input type="file" id="file" accept=".csv,.json,.txt" hidden>
+  </div>
+ </div>
+</div></header>
+<main><div class="wrap">
+ <section class="card bar">
+  <div><label>ตั้งแต่วันที่</label><input type="date" id="from"></div>
+  <div><label>ถึงวันที่</label><input type="date" id="to"></div>
+  <button class="chip" data-d="7">7 วัน</button><button class="chip" data-d="30">30 วัน</button><button class="chip" data-d="90">90 วัน</button><button class="chip" data-d="0">ทั้งหมด</button>
+  <div style="margin-left:auto"><label>ค้นหา</label><input id="q" placeholder="คำค้นหา..."></div>
+ </section>
+ <section class="grid kpis">
+  <div class="card kpi"><small>ข่าวทั้งหมด</small><b id="k0">0</b></div>
+  <div class="card kpi g"><small>😊 ข่าวดี</small><b id="k1">0</b></div>
+  <div class="card kpi b"><small>⚠️ ข่าวไม่ดี</small><b id="k2">0</b></div>
+  <div class="card kpi n"><small>📰 ข่าวทั่วไป</small><b id="k3">0</b></div>
+ </section>
+ <section class="grid two">
+  <div class="card"><h3>สัดส่วนความรู้สึก</h3><div class="donut"><svg id="dn" width="140" height="140" viewBox="0 0 42 42"></svg><div class="legend" id="lg"></div></div></div>
+  <div class="card"><h3>แนวโน้มจำนวนข่าว</h3><div class="trend" id="tr"></div></div>
+ </section>
+ <section class="card" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+  <b style="font-size:14px">กรอง:</b>
+  <button class="chip on" data-s="all">ทั้งหมด</button><button class="chip" data-s="good">ข่าวดี</button><button class="chip" data-s="bad">ข่าวไม่ดี</button><button class="chip" data-s="neu">ทั่วไป</button>
+  <span class="note" style="margin:0 0 0 auto">คลิกป้ายสถานะเพื่อปรับการวิเคราะห์ได้</span>
+ </section>
+ <div class="list" id="ls"></div>
+ <p class="note"><b id="sync">⏳ กำลังเชื่อมต่อ...</b><br>รองรับไฟล์ CSV / JSON คอลัมน์: หัวข้อข่าว (title), ลิงก์ (url), วันที่ (date, YYYY-MM-DD) และ ประเภท (sentiment: good / bad / neutral — ถ้าไม่ระบุ ระบบจะวิเคราะห์จากคำสำคัญให้อัตโนมัติ) · ข้อมูลที่อัปโหลดจะถูกบันทึกร่วมและแสดงเหมือนกันทุกเบราว์เซอร์ · ข้อมูลเริ่มต้นเป็นตัวอย่างเพื่อสาธิตเท่านั้น</p>
+</div></main>
+<script>
+var KEY='tl_news_v1',SL={good:'ข่าวดี',bad:'ข่าวไม่ดี',neu:'ทั่วไป'},CL={good:'#12a15f',bad:'#e5334b',neu:'#8b95b3'};
+var GOOD=['กำไร','เติบโต','รางวัล','เพิ่มขึ้น','ขยาย','ปันผล','สำเร็จ','เปิดตัว','แข็งแกร่ง','ยอดเยี่ยม','ชนะ','อันดับ 1','ช่วยเหลือ','มอบ','ร่วมมือ'];
+var BAD=['ขาดทุน','ร้องเรียน','ปรับ','ลดลง','ฟ้อง','ทุจริต','ปฏิเสธจ่าย','ล่าช้า','รั่วไหล','แฮก','หลอกลวง','มิจฉาชีพ','ผิดนัด','ถูกตรวจสอบ','วิกฤต'];
+var data=[],f={s:'all',q:'',from:'',to:''};
+function ymd(d){return d.toISOString().slice(0,10)}
+function ago(n){var d=new Date();d.setDate(d.getDate()-n);return ymd(d)}
+function demo(){var t=[
+['ไทยประกันชีวิตประกาศผลประกอบการไตรมาสล่าสุด กำไรเติบโตต่อเนื่อง',1,'good'],
+['ไทยประกันชีวิตเปิดตัวแผนประกันสุขภาพใหม่ คุ้มครองโรคร้ายแรงครบวงจร',2,'good'],
+['ไทยประกันชีวิตร่วมมือพันธมิตรดิจิทัล ยกระดับบริการลูกค้าผ่านแอปพลิเคชัน',4,'neu'],
+['เตือนมิจฉาชีพแอบอ้างชื่อบริษัทประกัน หลอกลวงผู้เอาประกัน',6,'bad'],
+['ไทยประกันชีวิตได้รับรางวัลองค์กรด้านการบริการลูกค้าดีเด่น',9,'good'],
+['ผู้บริหารไทยประกันชีวิตให้สัมภาษณ์ทิศทางธุรกิจประกันชีวิตปีหน้า',12,'neu'],
+['ผู้เอาประกันร้องเรียนความล่าช้าในการจ่ายสินไหม คปภ. ตรวจสอบ',15,'bad'],
+['ไทยประกันชีวิตจัดกิจกรรมสนับสนุนชุมชนและมอบทุนการศึกษา',19,'good'],
+['ไทยประกันชีวิตแต่งตั้งผู้บริหารระดับสูงคนใหม่',24,'neu'],
+['อัตราดอกเบี้ยลดลง กระทบผลตอบแทนการลงทุนของบริษัทประกันชีวิต',31,'bad'],
+['ไทยประกันชีวิตขยายสาขาและช่องทางตัวแทนทั่วประเทศ',38,'good'],
+['ไทยประกันชีวิตชี้แจงเงื่อนไขกรมธรรม์ประกันสะสมทรัพย์',47,'neu'],
+['ไทยประกันชีวิตจ่ายเงินปันผลและผลตอบแทนให้ผู้เอาประกันเพิ่มขึ้น',58,'good'],
+['คปภ. ปรับบริษัทประกันรายหนึ่งกรณีขายกรมธรรม์ไม่เหมาะสม',71,'bad'],
+['ไทยประกันชีวิตเผยแนวโน้มตลาดประกันชีวิตในประเทศไทย',84,'neu']];
+return t.map(function(x,i){return{id:i,title:x[0],url:'https://example.com/news/'+(i+1),date:ago(x[1]),s:x[2]}})}
+function auto(t){var g=0,b=0;GOOD.forEach(function(k){if(t.indexOf(k)>-1)g++});BAD.forEach(function(k){if(t.indexOf(k)>-1)b++});return b>g?'bad':g>b?'good':'neu'}
+function normS(v,t){v=String(v||'').toLowerCase().trim();if(/^(good|ดี|ข่าวดี|positive|\+)/.test(v))return'good';if(/^(bad|ไม่ดี|ข่าวไม่ดี|negative|-)/.test(v))return'bad';if(/^(neu|ทั่วไป|กลาง|general|normal)/.test(v))return'neu';return auto(t)}
+function normD(v){v=String(v||'').trim();var m=v.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/),y,mo,d;if(m){y=+m[1];mo=+m[2];d=+m[3]}else{m=v.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);if(!m)return ymd(new Date());d=+m[1];mo=+m[2];y=+m[3]}if(y>2400)y-=543;return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+function csv(txt){var r=[],row=[],c='',q=false,i,ch;txt=txt.replace(/^\uFEFF/,'');for(i=0;i<txt.length;i++){ch=txt[i];if(q){if(ch=='"'){if(txt[i+1]=='"'){c+='"';i++}else q=false}else c+=ch}else if(ch=='"')q=true;else if(ch==','){row.push(c);c=''}else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&txt[i+1]=='\n')i++;row.push(c);c='';if(row.join('').trim())r.push(row);row=[]}else c+=ch}row.push(c);if(row.join('').trim())r.push(row);return r}
+function pick(o,names){for(var k in o){var kk=k.toLowerCase().trim();if(names.indexOf(kk)>-1)return o[k]}return''}
+function toItems(arr){return arr.map(function(o,i){var t=String(pick(o,['title','หัวข้อข่าว','หัวข้อ','headline'])).trim();if(!t)return null;return{id:Date.now()+i,title:t,url:String(pick(o,['url','link','ลิงก์','ลิงค์','link ต้นทาง'])).trim(),date:normD(pick(o,['date','วันที่'])),s:normS(pick(o,['sentiment','ประเภท','สถานะ','ความรู้สึก']),t)}}).filter(Boolean)}
+function parse(name,txt){var arr;if(/\.json$/i.test(name)||/^\s*[\[{]/.test(txt)){var j=JSON.parse(txt);arr=Array.isArray(j)?j:(j.items||j.news||j.data||[])}else{var r=csv(txt),h=r.shift();arr=r.map(function(x){var o={};h.forEach(function(k,i){o[k]=x[i]});return o})}return toItems(arr)}
+var dbr=null;function ST(t){var e=document.getElementById('sync');if(e)e.textContent=t}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}
+ if(!dbr)return;if(JSON.stringify(data).length>230000){ST('⚠️ ข้อมูลใหญ่เกินกว่าจะแชร์ข้ามเครื่อง (จำกัดประมาณ 1,500 ข่าว)');return}
+ dbr.set({items:data,updatedAt:Date.now()}).then(function(){ST('☁️ บันทึกข้อมูลร่วมแล้ว — เปิดจากเบราว์เซอร์หรือเครื่องอื่นจะเห็นข้อมูลชุดนี้')}).catch(function(){ST('⚠️ บัญชีนี้ไม่มีสิทธิ์บันทึกข้อมูลร่วม — เก็บไว้เฉพาะเครื่องนี้')})}
+function load(){try{var v=localStorage.getItem(KEY);if(v){var a=JSON.parse(v);if(a&&a.length)return a}}catch(e){}return demo()}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(d){var p=d.split('-');return +p[2]+'/'+ +p[1]+'/'+(+p[0]+543)}
+function rows(){return data.filter(function(n){return(!f.from||n.date>=f.from)&&(!f.to||n.date<=f.to)&&(f.s=='all'||n.s==f.s)&&(!f.q||(n.title+n.url).toLowerCase().indexOf(f.q)>-1)}).sort(function(a,b){return b.date<a.date?-1:1})}
+function render(){
+ var inR=data.filter(function(n){return(!f.from||n.date>=f.from)&&(!f.to||n.date<=f.to)&&(!f.q||(n.title+n.url).toLowerCase().indexOf(f.q)>-1)});
+ var c={good:0,bad:0,neu:0};inR.forEach(function(n){c[n.s]++});var tot=inR.length;
+ k0.textContent=tot;k1.textContent=c.good;k2.textContent=c.bad;k3.textContent=c.neu;
+ var off=0,h='<circle cx="21" cy="21" r="15.9" fill="none" stroke="'+'var(--line)'+'" stroke-width="6"/>';
+ ['good','bad','neu'].forEach(function(s){if(!tot||!c[s])return;var p=c[s]/tot*100;h+='<circle cx="21" cy="21" r="15.9" fill="none" stroke="'+CL[s]+'" stroke-width="6" stroke-dasharray="'+p+' '+(100-p)+'" stroke-dashoffset="'+(25-off)+'"/>';off+=p});
+ h+='<text x="21" y="23" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor">'+tot+'</text>';dn.innerHTML=h;
+ lg.innerHTML=['good','bad','neu'].map(function(s){return'<div><span class="dot" style="background:'+CL[s]+'"></span>'+SL[s]+' '+c[s]+(tot?' ('+Math.round(c[s]/tot*100)+'%)':'')+'</div>'}).join('');
+ var ds=inR.map(function(n){return n.date}).sort(),span=ds.length?(new Date(ds[ds.length-1])-new Date(ds[0]))/864e5:0,wk=span>31,b={};
+ inR.forEach(function(n){var d=new Date(n.date),k=n.date;if(wk){d.setDate(d.getDate()-d.getDay());k=ymd(d)}(b[k]=b[k]||{good:0,bad:0,neu:0,t:0})[n.s]++;b[k].t++});
+ var ks=Object.keys(b).sort(),mx=Math.max.apply(null,ks.map(function(k){return b[k].t}).concat(1));
+ tr.innerHTML=ks.length?ks.map(function(k){var x=b[k],lab=k.slice(8)+'/'+k.slice(5,7);return'<div class="col" title="'+lab+': '+x.t+' ข่าว">'+['bad','neu','good'].map(function(s){return x[s]?'<i style="height:'+(x[s]/mx*105)+'px;background:'+CL[s]+'"></i>':''}).join('')+'<span>'+lab+'</span></div>'}).join(''):'<div class="empty" style="width:100%">ไม่มีข้อมูลในช่วงเวลานี้</div>';
+ var L=rows();ls.innerHTML=L.length?L.map(function(n){return'<article class="card news '+n.s+'"><button class="badge '+n.s+'" data-id="'+n.id+'" title="คลิกเพื่อเปลี่ยนสถานะ">'+SL[n.s]+'</button><div><h4>'+esc(n.title)+'</h4><div class="meta">📅 '+fmt(n.date)+(n.url?' · '+esc(n.url):'')+'</div></div>'+(n.url?'<a href="'+esc(n.url)+'" target="_blank" rel="noopener">ต้นทาง ↗</a>':'<span></span>')+'</article>'}).join(''):'<div class="card empty">ไม่พบข่าวตามเงื่อนไขที่เลือก</div>';
+ sub.textContent='แสดง '+L.length+' จาก '+data.length+' ข่าว · สรุปความรู้สึก ดี / ไม่ดี / ทั่วไป'}
+var $=function(i){return document.getElementById(i)};
+['k0','k1','k2','k3','dn','lg','tr','ls','sub'].forEach(function(i){window[i]=$(i)});
+$('up').onclick=function(){$('file').click()};
+$('file').onchange=function(e){var fl=e.target.files[0];if(!fl)return;var rd=new FileReader();rd.onload=function(){try{var it=parse(fl.name,rd.result);if(!it.length)throw 0;if(confirm('พบ '+it.length+' ข่าว — กด OK เพื่อแทนที่ข้อมูลเดิม หรือ Cancel เพื่อเพิ่มต่อท้าย'))data=it;else data=data.concat(it);save();f.from=f.to='';$('from').value=$('to').value='';render()}catch(x){alert('อ่านไฟล์ไม่สำเร็จ กรุณาตรวจสอบรูปแบบไฟล์ (CSV/JSON)')}};rd.readAsText(fl,'utf-8');e.target.value=''};
+$('tpl').onclick=function(){var t='\uFEFFtitle,url,date,sentiment\n"ไทยประกันชีวิตเปิดตัวผลิตภัณฑ์ใหม่",https://example.com/a,'+ymd(new Date())+',good\n"ข่าวตัวอย่างทั่วไป",https://example.com/b,'+ymd(new Date())+',neutral\n';var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(t);a.download='thailife-news-template.csv';a.click()};
+$('demo').onclick=function(){data=demo();save();render()};
+$('from').onchange=function(){f.from=this.value;render()};$('to').onchange=function(){f.to=this.value;render()};
+$('q').oninput=function(){f.q=this.value.toLowerCase();render()};
+document.querySelectorAll('[data-d]').forEach(function(b){b.onclick=function(){var d=+b.dataset.d;f.from=d?ago(d):'';f.to=d?ymd(new Date()):'';$('from').value=f.from;$('to').value=f.to;document.querySelectorAll('[data-d]').forEach(function(x){x.classList.toggle('on',x==b)});render()}});
+document.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){f.s=b.dataset.s;document.querySelectorAll('[data-s]').forEach(function(x){x.classList.toggle('on',x==b)});render()}});
+ls.onclick=function(e){var id=e.target.dataset&&e.target.dataset.id;if(id==null)return;var o=['good','neu','bad'];data.forEach(function(n){if(String(n.id)===id)n.s=o[(o.indexOf(n.s)+1)%3]});save();render()};
+data=load();render();
+try{window.claude.use('db').then(function(db){if(!db){ST('💾 เก็บข้อมูลเฉพาะเครื่องนี้');return}
+ dbr=db.doc('dashboard/main');
+ dbr.onSnapshot(function(s){if(s.exists){var d=s.data();if(d&&Array.isArray(d.items)){data=d.items;try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}render()}ST('☁️ ซิงก์ข้อมูลร่วมแล้ว — ข้อมูลล่าสุดจากการอัปโหลดล่าสุด')}else ST('☁️ เชื่อมต่อแล้ว — อัปโหลดข้อมูลเพื่อแชร์ข้ามเครื่อง')},function(){ST('💾 เก็บข้อมูลเฉพาะเครื่องนี้')})}).catch(function(){ST('💾 เก็บข้อมูลเฉพาะเครื่องนี้')})}catch(e){ST('💾 เก็บข้อมูลเฉพาะเครื่องนี้')}
+</script>
+</body>
+</html>
