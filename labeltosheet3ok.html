@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI อ่านสติ๊กเกอร์พัสดุและบันทึก Google Sheets (Local OCR)</title>
+    <!-- โหลด Tesseract.js สำหรับอ่านข้อความจากภาพบนเครื่อง (100% Offline / Local) -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; }
+        .cam-box, .preview-box { text-align: center; margin-bottom: 20px; }
+        video, canvas, img { width: 100%; max-height: 300px; border-radius: 8px; object-fit: cover; background: #000; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px; transition: background 0.3s; }
+        button:hover { background: #2980b9; }
+        button.success { background: #2ecc71; }
+        button.success:hover { background: #27ae60; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        textarea { resize: vertical; height: 80px; }
+        .status { margin-top: 15px; text-align: center; font-weight: bold; color: #e74c3c; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>สแกนสติ๊กเกอร์พัสดุ</h2>
+    
+    <!-- ส่วนกล้อง -->
+    <div id="camera-section">
+        <div class="cam-box">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" class="hidden"></canvas>
+        </div>
+        <button id="capture-btn">ถ่ายภาพสติ๊กเกอร์</button>
+    </div>
+
+    <!-- ส่วนแสดงภาพและฟอร์มแก้ไขข้อมูล -->
+    <div id="form-section" class="hidden">
+        <div class="preview-box">
+            <img id="preview" alt="Captured Image">
+        </div>
+        
+        <div class="form-group">
+            <label>ชื่อ-นามสกุล (Column A):</label>
+            <input type="text" id="name" placeholder="กำลังประมวลผล...">
+        </div>
+        
+        <div class="form-group">
+            <label>ที่อยู่ (Column B):</label>
+            <textarea id="address" placeholder="กำลังประมวลผล..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>ข้อมูลอื่นๆ เช่น เบอร์โทร (Column C):</label>
+            <input type="text" id="others" placeholder="เบอร์โทร หรือข้อมูลเพิ่มเติม">
+        </div>
+
+        <button id="save-btn" class="success">บันทึกข้อมูลลง Google Sheet</button>
+        <button id="retake-btn" style="background: #95a5a6; margin-top: 5px;">ถ่ายภาพใหม่</button>
+    </div>
+
+    <div id="status" class="status"></div>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview');
+    const captureBtn = document.getElementById('capture-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+    const cameraSection = document.getElementById('camera-section');
+    const formSection = document.getElementById('form-section');
+    const statusDiv = document.getElementById('status');
+
+    const inputName = document.getElementById('name');
+    const inputAddress = document.getElementById('address');
+    const inputOthers = document.getElementById('others');
+
+    // URL Google Apps Script ของท่าน
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx0IQae0kP2gk8DHSuSfOmmofZ47mh7gEVFBeuLJZKPViuIOI5q53zylw3SbVZxGAdJ/exec";
+
+    // เปิดใช้งานกล้อง
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { statusDiv.innerText = "ไม่สามารถเปิดกล้องได้: " + err; });
+
+    // ถ่ายภาพ
+    captureBtn.addEventListener('click', () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageDataURL = canvas.toDataURL('image/jpeg');
+        preview.src = imageDataURL;
+
+        cameraSection.classList.add('hidden');
+        formSection.classList.remove('hidden');
+
+        processImageWithLocalOCR(imageDataURL);
+    });
+
+    // ถ่ายใหม่
+    retakeBtn.addEventListener('click', () => {
+        formSection.classList.add('hidden');
+        cameraSection.classList.remove('hidden');
+        statusDiv.innerText = "";
+        inputName.value = "";
+        inputAddress.value = "";
+        inputOthers.value = "";
+    });
+
+    // ฟังก์ชันอ่านข้อความจากภาพโดยประมวลผลบนเครื่องผู้ใช้ (Local OCR) ปลอดภัย ไม่ส่งออกนอก
+    async function processImageWithLocalOCR(dataUrl) {
+        statusDiv.innerText = "AI กำลังแกะรอยข้อความจากภาพ (Local Processing)...";
+        
+        try {
+            // เรียกใช้งาน Tesseract อ่านภาษไทยและอังกฤษ
+            const result = await Tesseract.recognize(
+                dataUrl,
+                'tha+eng',
+                { 
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            statusDiv.innerText = `กำลังอ่านข้อความ: ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                }
+            );
+
+            const text = result.data.text;
+            console.log("Raw OCR Text:", text);
+
+            // แยกบรรทัดและทำความสะอาดข้อความที่อ่านได้
+            parseLabelText(text);
+
+            statusDiv.innerText = "อ่านข้อมูลสำเร็จ กรุณาตรวจสอบและแก้ไขหากจำเป็น";
+        } catch (error) {
+            statusDiv.innerText = "เกิดข้อผิดพลาดในการอ่านภาพ: " + error.message;
+            inputName.value = "";
+            inputAddress.value = "";
+        }
+    }
+
+    // ฟังก์ชันช่วยคัดแยกข้อความเบื้องต้นจาก Label พัสดุ
+    function parseLabelText(fullText) {
+        const lines = fullText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        let detectedPhone = "";
+        let detectedName = "";
+        let addressLines = [];
+
+        // ค้นหาเบอร์โทรศัพท์ (รูปแบบ 0xx-xxx-xxxx หรือ 10 หลัก)
+        const phoneRegex = /(0[0-9]{1,2}[-\s]?[0-9]{3}[-\s]?[0-9]{4})/g;
+        
+        lines.forEach(line => {
+            if (phoneRegex.test(line)) {
+                detectedPhone = line.match(phoneRegex)[0];
+            } else if (!detectedName && (line.includes("คุณ") || line.includes("นาย") || line.includes("นาง") || line.includes("น.ส."))) {
+                detectedName = line;
+            } else {
+                addressLines.push(line);
+            }
+        });
+
+        // ถ้าหาชื่อไม่เจอจากคำนำหน้า ให้บรรทัดแรกสุดเป็นชื่อ
+        if (!detectedName && lines.length > 0) {
+            detectedName = lines[0];
+            addressLines = lines.slice(1);
+        }
+
+        inputName.value = detectedName || "";
+        inputAddress.value = addressLines.join(" ") || fullText;
+        inputOthers.value = detectedPhone || "";
+    }
+
+    // บันทึกข้อมูลไปยัง Google Sheets
+    saveBtn.addEventListener('click', async () => {
+        const payload = {
+            name: inputName.value,
+            address: inputAddress.value,
+            others: inputOthers.value
+        };
+
+        statusDiv.innerText = "กำลังบันทึกข้อมูลลง Google Sheet...";
+        saveBtn.disabled = true;
+
+        try {
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            statusDiv.style.color = "#27ae60";
+            statusDiv.innerText = "บันทึกข้อมูลเรียบร้อยแล้ว!";
+            setTimeout(() => {
+                retakeBtn.click();
+                statusDiv.style.color = "#e74c3c";
+                statusDiv.innerText = "";
+                saveBtn.disabled = false;
+            }, 2000);
+        } catch (error) {
+            statusDiv.innerText = "เกิดข้อผิดพลาดในการบันทึก: " + error;
+            saveBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
